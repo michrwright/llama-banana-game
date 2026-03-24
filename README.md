@@ -1,2 +1,2 @@
 # llama-banana-game
-Building a game for the year 5 science class
+Building a game, using AI in class for the year 4 science class
