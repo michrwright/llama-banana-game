@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Llama Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a1a2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100dvh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      position: absolute;
+    }
+    #playAgainBtn {
+      display: none;
+      position: absolute;
+      padding: 14px 36px;
+      font-size: 22px;
+      font-weight: bold;
+      background: #FFD700;
+      color: #1a1a2e;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 10;
+      min-height: 52px;
+    }
+    #playAgainBtn:hover { background: #FFC200; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="480" height="640"></canvas>
+  <button id="playAgainBtn">Play Again</button>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+
+    // ===== GAME CONFIG (scores, speeds, timer) =====
+    const CONFIG = {
+      timer: 60,
+      speed: { slow: 2, medium: 3.5, fast: 5.5 },
+      score: { gold: 10, regular: 5, rotten: -8 },
+      banana: { goldChance: 0.15, rottenChance: 0.2 },
+      llama: { name: '', speed: 5 },
+      gameTitle: 'Llama Game',
+      winMessage: 'Game over!',
+      rottenName: 'Rotten banana',
+      credits: { class1: '', class2: '', class3: '' }
+    };
+
+    // ===== LLAMA APPEARANCE (pyjamas, colours, name) =====
+    const llamaConfig = {
+      name: CONFIG.llama.name,
+      bodyColor: '#E8E8E8',
+      outlineColor: '#333333',
+      hasPyjamas: false,
+      pyjamaColor: '#FFFFFF',
+      pyjamaPattern: null, // 'stripes' | 'dots' | 'crosses' | null
+      pyjamaStripeColor: '#AAAAAA',
+    };
+
+    function drawLlama(cx, cy) {
+      const w = 60, h = 80;
+      const x = cx - w / 2, y = cy - h;
+
+      ctx.save();
+
+      // Body
+      ctx.fillStyle = llamaConfig.bodyColor;
+      ctx.strokeStyle = llamaConfig.outlineColor;
+      ctx.lineWidth = 2;
+
+      // Main body (rectangle with rounded corners)
+      ctx.beginPath();
+      ctx.roundRect(x + 10, y + 30, 40, 35, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      // Pyjamas on body
+      if (llamaConfig.hasPyjamas) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(x + 10, y + 30, 40, 35, 8);
+        ctx.clip();
+        ctx.fillStyle = llamaConfig.pyjamaColor;
+        ctx.fillRect(x + 10, y + 30, 40, 35);
+
+        // Pattern
+        if (llamaConfig.pyjamaPattern === 'stripes') {
+          ctx.strokeStyle = llamaConfig.pyjamaStripeColor;
+          ctx.lineWidth = 3;
+          for (let i = -10; i < 60; i += 8) {
+            ctx.beginPath();
+            ctx.moveTo(x + 10 + i, y + 30);
+            ctx.lineTo(x + 10 + i + 20, y + 65);
+            ctx.stroke();
+          }
+        } else if (llamaConfig.pyjamaPattern === 'dots') {
+          ctx.fillStyle = llamaConfig.pyjamaStripeColor;
+          for (let dx = 5; dx < 40; dx += 10) {
+            for (let dy = 5; dy < 35; dy += 10) {
+              ctx.beginPath();
+              ctx.arc(x + 10 + dx, y + 30 + dy, 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        } else if (llamaConfig.pyjamaPattern === 'crosses') {
+          ctx.strokeStyle = llamaConfig.pyjamaStripeColor;
+          ctx.lineWidth = 2;
+          for (let dx = 8; dx < 40; dx += 12) {
+            for (let dy = 8; dy < 35; dy += 12) {
+              ctx.beginPath();
+              ctx.moveTo(x + 10 + dx - 4, y + 30 + dy);
+              ctx.lineTo(x + 10 + dx + 4, y + 30 + dy);
+              ctx.moveTo(x + 10 + dx, y + 30 + dy - 4);
+              ctx.lineTo(x + 10 + dx, y + 30 + dy + 4);
+              ctx.stroke();
+            }
+          }
+        }
+
+        ctx.restore();
+        ctx.beginPath();
+        ctx.roundRect(x + 10, y + 30, 40, 35, 8);
+        ctx.stroke();
+      }
+
+      // Neck
+      ctx.fillStyle = llamaConfig.bodyColor;
+      ctx.beginPath();
+      ctx.roundRect(x + 22, y + 12, 16, 22, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      // Head
+      ctx.beginPath();
+      ctx.ellipse(x + 30, y + 10, 12, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Ears
+      ctx.beginPath();
+      ctx.moveTo(x + 21, y + 2);
+      ctx.lineTo(x + 18, y - 8);
+      ctx.lineTo(x + 25, y + 1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + 35, y + 1);
+      ctx.lineTo(x + 38, y - 8);
+      ctx.lineTo(x + 41, y + 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Eye
+      ctx.fillStyle = '#333';
+      ctx.beginPath();
+      ctx.arc(x + 35, y + 8, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Nose
+      ctx.fillStyle = '#888';
+      ctx.beginPath();
+      ctx.ellipse(x + 38, y + 13, 3, 2, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Legs
+      ctx.fillStyle = llamaConfig.bodyColor;
+      ctx.strokeStyle = llamaConfig.outlineColor;
+      const legPositions = [x + 13, x + 22, x + 33, x + 42];
+      legPositions.forEach(lx => {
+        ctx.beginPath();
+        ctx.roundRect(lx, y + 60, 8, 20, 3);
+        ctx.fill();
+        ctx.stroke();
+      });
+
+      // Catch flash
+      if (llamaFlash.active) {
+        ctx.fillStyle = llamaFlash.color + '55';
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, 8);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    // ===== BACKGROUND (sky, beach, elements) =====
+    const backgroundConfig = {
+      skyColor: '#87CEEB',
+      sandColor: '#F5DEB3',
+      elements: []
+      // To add elements, push objects like:
+      // { type: 'sun', x: 380, y: 80, color: '#FFD700', size: 40 }
+      // { type: 'son', x: 240, y: 340 }
+      // { type: 'palmTree', x: 60 }
+      // { type: 'waves', color: '#5BA4CF' }
+      // { type: 'cloud', x: 100, y: 60, size: 40 }
+    };
+
+    function drawBackground() {
+      // Sky
+      ctx.fillStyle = backgroundConfig.skyColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height * 0.6);
+
+      // Sand
+      ctx.fillStyle = backgroundConfig.sandColor;
+      ctx.fillRect(0, canvas.height * 0.6, canvas.width, canvas.height * 0.4);
+
+      // Elements
+      backgroundConfig.elements.forEach(el => {
+        switch (el.type) {
+          case 'sun':     drawSun(el); break;
+          case 'son':     drawSon(el); break;
+          case 'palmTree': drawPalmTree(el); break;
+          case 'waves':   drawWaves(el); break;
+          case 'cloud':   drawCloud(el); break;
+        }
+      });
+    }
+
+    function drawSun(el) {
+      const { x, y, color = '#FFD700', size = 45 } = el;
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+      // Rays
+      ctx.lineWidth = 3;
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(angle) * (size + 4), y + Math.sin(angle) * (size + 4));
+        ctx.lineTo(x + Math.cos(angle) * (size + 18), y + Math.sin(angle) * (size + 18));
+        ctx.stroke();
+      }
+      // Circle
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawSon(el) {
+      // A small boy on the beach — for the C1-P1 son/sun joke
+      const { x, y } = el;
+      ctx.save();
+      ctx.strokeStyle = '#5C3317';
+      ctx.fillStyle = '#FDBCB4';
+      ctx.lineWidth = 2.5;
+      // Head
+      ctx.beginPath();
+      ctx.arc(x, y - 28, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      // Hair
+      ctx.fillStyle = '#5C3317';
+      ctx.beginPath();
+      ctx.arc(x, y - 34, 10, Math.PI, 0);
+      ctx.fill();
+      // Body
+      ctx.strokeStyle = '#3A7BD5';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x, y - 18);
+      ctx.lineTo(x, y + 2);
+      ctx.stroke();
+      // Arms
+      ctx.beginPath();
+      ctx.moveTo(x - 12, y - 8);
+      ctx.lineTo(x, y - 14);
+      ctx.lineTo(x + 12, y - 8);
+      ctx.stroke();
+      // Legs
+      ctx.beginPath();
+      ctx.moveTo(x, y + 2);
+      ctx.lineTo(x - 8, y + 20);
+      ctx.moveTo(x, y + 2);
+      ctx.lineTo(x + 8, y + 20);
+      ctx.stroke();
+      // Label so it's unmistakable
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('👦 son', x, y - 42);
+      ctx.restore();
+    }
+
+    function drawPalmTree(el) {
+      const { x, color = '#8B6914' } = el;
+      const baseY = canvas.height * 0.6;
+      ctx.save();
+      // Trunk
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(x, baseY);
+      ctx.bezierCurveTo(x + 10, baseY - 40, x - 5, baseY - 80, x + 5, baseY - 110);
+      ctx.stroke();
+      // Leaves
+      ctx.strokeStyle = '#2D8A2D';
+      ctx.lineWidth = 4;
+      const leafAngles = [-0.8, -0.3, 0.2, 0.7, 1.2];
+      leafAngles.forEach(angle => {
+        ctx.beginPath();
+        ctx.moveTo(x + 5, baseY - 110);
+        ctx.lineTo(
+          x + 5 + Math.cos(angle) * 50,
+          baseY - 110 + Math.sin(angle - 1.2) * 40
+        );
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+
+    function drawWaves(el) {
+      const { color = '#5BA4CF' } = el;
+      const y = canvas.height * 0.6 + 6;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let wx = 0; wx < canvas.width; wx += 40) {
+        ctx.moveTo(wx, y);
+        ctx.bezierCurveTo(wx + 10, y - 8, wx + 30, y - 8, wx + 40, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawCloud(el) {
+      const { x, y, size = 35 } = el;
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath();
+      ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
+      ctx.arc(x + size * 0.7, y + size * 0.1, size * 0.45, 0, Math.PI * 2);
+      ctx.arc(x - size * 0.5, y + size * 0.1, size * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // ===== BANANA TYPES (appearance, frequency, scoring) =====
+    const bananaConfig = {
+      regular: { color: '#FFE135', size: 24, label: 'banana' },
+      gold:    { color: '#FFD700', glowColor: '#FFF4A3', size: 28, label: 'gold banana' },
+      rotten:  { color: '#5C4033', size: 24, label: CONFIG.rottenName },
+      goldActive: false,
+      rottenActive: false,
+    };
+
+    function spawnBanana() {
+      const types = ['regular'];
+      if (bananaConfig.goldActive)   types.push('gold');
+      if (bananaConfig.rottenActive) types.push('rotten');
+
+      let type = 'regular';
+      const r = Math.random();
+      if (bananaConfig.goldActive && r < CONFIG.banana.goldChance) {
+        type = 'gold';
+      } else if (bananaConfig.rottenActive && r < CONFIG.banana.goldChance + CONFIG.banana.rottenChance) {
+        type = 'rotten';
+      }
+
+      const cfg = bananaConfig[type];
+      return {
+        x: cfg.size + Math.random() * (canvas.width - cfg.size * 2),
+        y: -cfg.size,
+        type,
+        width: cfg.size,
+        height: cfg.size * 1.3,
+        speed: getCurrentSpeed(),
+      };
+    }
+
+    function drawBanana(banana) {
+      const cfg = bananaConfig[banana.type];
+      const { x, y } = banana;
+      ctx.save();
+
+      // Glow for gold
+      if (cfg.glowColor) {
+        ctx.shadowColor = cfg.glowColor;
+        ctx.shadowBlur = 12;
+      }
+
+      // Draw crescent banana shape
+      ctx.strokeStyle = cfg.color;
+      ctx.lineWidth = banana.width * 0.45;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(x, y, banana.width * 0.55, Math.PI * 1.1, Math.PI * 1.95);
+      ctx.stroke();
+
+      // Rotten: add dark spots
+      if (banana.type === 'rotten') {
+        ctx.fillStyle = '#3A2010';
+        ctx.shadowBlur = 0;
+        [[-4, -2], [3, 2], [-1, 5]].forEach(([dx, dy]) => {
+          ctx.beginPath();
+          ctx.arc(x + dx, y + dy, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      // Gold sparkle
+      if (banana.type === 'gold') {
+        ctx.fillStyle = '#FFFDE0';
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(x - 5, y - 7, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    // ===== SOUNDS (web audio, one function per banana type) =====
+    const soundConfig = {
+      regular: { type: 'sine',     frequency: 440, duration: 0.15 },
+      gold:    { type: 'sine',     frequency: 660, duration: 0.25 },
+      rotten:  { type: 'sawtooth', frequency: 180, duration: 0.2  }
+    };
+
+    let audioCtx = null;
+
+    function initAudio() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      } catch (e) { /* audio unavailable */ }
+    }
+
+    function playSound(type) {
+      try {
+        if (!audioCtx) return;
+        const cfg = soundConfig[type];
+        if (!cfg) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = cfg.type;
+        osc.frequency.setValueAtTime(cfg.frequency, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + cfg.duration);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + cfg.duration);
+      } catch (e) { /* silent fail */ }
+    }
+
+    // ===== GAME LOGIC (movement, collision, timer, speed ramp) =====
+    let gameState = 'not-started';
+    let score = 0;
+    let timeRemaining = CONFIG.timer;
+    let lastTimestamp = null;
+    let bananas = [];
+    let spawnTimer = 0;
+    const SPAWN_INTERVAL_MIN = 50, SPAWN_INTERVAL_MAX = 90;
+    let nextSpawn = 70;
+    const keys = { left: false, right: false };
+
+    const llama = {
+      x: canvas.width / 2,
+      y: canvas.height - 70,
+      width: 60,
+      height: 80,
+    };
+
+    const llamaFlash = { active: false, color: '#FFD700', timer: 0 };
+    let catchMessage = { text: '', x: 0, y: 0, color: '#fff', timer: 0 };
+    let scoreFlash = { color: '#fff', timer: 0 };
+
+    function getCurrentSpeed() {
+      if (timeRemaining > 40) return CONFIG.speed.slow;
+      if (timeRemaining > 20) return CONFIG.speed.medium;
+      return CONFIG.speed.fast;
+    }
+
+    function update(dt) {
+      if (gameState !== 'playing') return;
+
+      // Timer
+      timeRemaining -= dt;
+      if (timeRemaining <= 0) {
+        timeRemaining = 0;
+        endGame();
+        return;
+      }
+
+      // Llama movement
+      const speed = CONFIG.llama.speed;
+      if (keys.left)  llama.x = Math.max(llama.width / 2, llama.x - speed);
+      if (keys.right) llama.x = Math.min(canvas.width - llama.width / 2, llama.x + speed);
+
+      // Spawn bananas
+      spawnTimer++;
+      if (spawnTimer >= nextSpawn) {
+        if (bananas.length < 6) bananas.push(spawnBanana());
+        spawnTimer = 0;
+        nextSpawn = SPAWN_INTERVAL_MIN + Math.random() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
+      }
+
+      // Move bananas + update speeds
+      const currentSpeed = getCurrentSpeed();
+      bananas = bananas.filter(b => {
+        b.speed = currentSpeed;
+        b.y += b.speed;
+
+        // Collision with llama
+        if (
+          b.y + b.height / 2 >= llama.y - llama.height &&
+          b.y - b.height / 2 <= llama.y &&
+          b.x >= llama.x - llama.width / 2 - b.width / 2 &&
+          b.x <= llama.x + llama.width / 2 + b.width / 2
+        ) {
+          catchBanana(b);
+          return false;
+        }
+
+        // Remove if off screen
+        return b.y < canvas.height + b.height;
+      });
+
+      // Flash timers
+      if (llamaFlash.active) {
+        llamaFlash.timer -= dt;
+        if (llamaFlash.timer <= 0) llamaFlash.active = false;
+      }
+      if (catchMessage.timer > 0) catchMessage.timer -= dt;
+      if (scoreFlash.timer > 0) scoreFlash.timer -= dt;
+    }
+
+    function catchBanana(banana) {
+      const pts = CONFIG.score[banana.type];
+      score += pts;
+      playSound(banana.type);
+
+      llamaFlash.active = true;
+      llamaFlash.color = pts > 0 ? '#FFD700' : '#FF4444';
+      llamaFlash.timer = 0.2;
+
+      scoreFlash.color = pts > 0 ? '#44FF88' : '#FF4444';
+      scoreFlash.timer = 0.3;
+
+      const label = bananaConfig[banana.type].label;
+      const sign = pts > 0 ? '+' : '';
+      catchMessage.text = `${label} ${sign}${pts}`;
+      catchMessage.x = llama.x;
+      catchMessage.y = llama.y - llama.height - 10;
+      catchMessage.color = pts > 0 ? '#44FF88' : '#FF4444';
+      catchMessage.timer = 0.8;
+    }
+
+    function startGame() {
+      score = 0;
+      timeRemaining = CONFIG.timer;
+      bananas = [];
+      spawnTimer = 0;
+      llama.x = canvas.width / 2;
+      gameState = 'playing';
+      initAudio();
+      positionPlayAgainBtn();
+    }
+
+    function endGame() {
+      gameState = 'ended';
+      showPlayAgainBtn();
+    }
+
+    function resetGame() {
+      gameState = 'not-started';
+      hidePlayAgainBtn();
+    }
+
+    // ===== UI (score display, timer, end screen, credits) =====
+    function draw() {
+      if (gameState === 'not-started') { drawStartScreen(); return; }
+      if (gameState === 'ended')       { drawEndScreen();   return; }
+
+      // Playing
+      drawLlama(llama.x, llama.y);
+      bananas.forEach(drawBanana);
+      drawHUD();
+      drawCatchMessage();
+    }
+
+    function textShadow(text, x, y, font, fillColor, shadowColor = '#000', blur = 4) {
+      ctx.font = font;
+      ctx.shadowColor = shadowColor;
+      ctx.shadowBlur = blur;
+      ctx.fillStyle = fillColor;
+      ctx.fillText(text, x, y);
+      ctx.shadowBlur = 0;
+    }
+
+    function drawHUD() {
+      // Timer
+      const timerColor = timeRemaining <= 10 ? '#FF4444' : '#FFFFFF';
+      const timerSize  = timeRemaining <= 10 ? 48 : 38;
+      ctx.textAlign = 'center';
+      textShadow(
+        Math.ceil(timeRemaining).toString(),
+        canvas.width / 2, 48,
+        `bold ${timerSize}px sans-serif`,
+        timerColor
+      );
+
+      // Score
+      const scoreName  = llamaConfig.name ? `${llamaConfig.name}: ` : 'Score: ';
+      const scoreColor = scoreFlash.timer > 0
+        ? scoreFlash.color
+        : (score < 0 ? '#FF4444' : '#FFFFFF');
+      ctx.textAlign = 'left';
+      textShadow(
+        `${scoreName}${score} pts`,
+        12, 40,
+        'bold 24px sans-serif',
+        scoreColor
+      );
+    }
+
+    function drawCatchMessage() {
+      if (catchMessage.timer <= 0) return;
+      const alpha = Math.min(1, catchMessage.timer * 2);
+      ctx.globalAlpha = alpha;
+      ctx.textAlign = 'center';
+      textShadow(
+        catchMessage.text,
+        catchMessage.x,
+        catchMessage.y,
+        'bold 18px sans-serif',
+        catchMessage.color
+      );
+      ctx.globalAlpha = 1;
+    }
+
+    function drawStartScreen() {
+      drawLlama(llama.x, llama.y);
+
+      // Title
+      ctx.textAlign = 'center';
+      textShadow(
+        CONFIG.gameTitle,
+        canvas.width / 2, 120,
+        'bold 44px sans-serif',
+        '#FFFFFF', '#000', 6
+      );
+
+      // Subtitle
+      textShadow(
+        "Joshua's idea 🦙",
+        canvas.width / 2, 160,
+        '22px sans-serif',
+        '#FFFDE0'
+      );
+
+      // Instruction
+      const isTouchDevice = 'ontouchstart' in window;
+      const hint = isTouchDevice ? 'Tap to start' : 'Press SPACE to start';
+      textShadow(
+        hint,
+        canvas.width / 2, canvas.height - 60,
+        'bold 24px sans-serif',
+        '#FFFDE0', '#000', 4
+      );
+
+      if (isTouchDevice) {
+        textShadow(
+          'Tap left ← or → right to move',
+          canvas.width / 2, canvas.height - 30,
+          '18px sans-serif',
+          '#FFFDE0'
+        );
+      } else {
+        textShadow(
+          'Use arrow keys ← → to move',
+          canvas.width / 2, canvas.height - 30,
+          '18px sans-serif',
+          '#FFFDE0'
+        );
+      }
+    }
+
+    function drawEndScreen() {
+      // Dim overlay
+      ctx.fillStyle = 'rgba(10, 10, 30, 0.82)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.textAlign = 'center';
+
+      // Win message
+      textShadow(
+        CONFIG.winMessage,
+        canvas.width / 2, 160,
+        'bold 38px sans-serif',
+        '#FFFFFF', '#000', 6
+      );
+
+      // Final score
+      const scoreColor = score < 0 ? '#FF6666' : '#FFD700';
+      textShadow(
+        score.toString(),
+        canvas.width / 2, 260,
+        'bold 96px sans-serif',
+        scoreColor, '#000', 8
+      );
+      textShadow(
+        'points',
+        canvas.width / 2, 300,
+        '24px sans-serif',
+        '#CCCCCC'
+      );
+
+      // Credits
+      const creditLines = [
+        'Made by Year 4, Gatehouse School',
+        'Science Week 2026',
+      ];
+      if (CONFIG.credits.class1) creditLines.push(CONFIG.credits.class1);
+      if (CONFIG.credits.class2) creditLines.push(CONFIG.credits.class2);
+      if (CONFIG.credits.class3) creditLines.push(CONFIG.credits.class3);
+
+      // Divider
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(60, 330);
+      ctx.lineTo(canvas.width - 60, 330);
+      ctx.stroke();
+
+      creditLines.forEach((line, i) => {
+        textShadow(
+          line,
+          canvas.width / 2, 360 + i * 26,
+          i < 2 ? 'bold 18px sans-serif' : '16px sans-serif',
+          i < 2 ? '#FFFDE0' : '#AAAAAA'
+        );
+      });
+    }
+
+    // Play again button positioning
+    function positionPlayAgainBtn() {
+      const scale = parseFloat(canvas.style.transform?.match(/scale\(([^)]+)\)/)?.[1] || 1);
+      const rect = canvas.getBoundingClientRect();
+      playAgainBtn.style.left = `${rect.left + (canvas.width * scale) / 2 - playAgainBtn.offsetWidth / 2}px`;
+      playAgainBtn.style.top  = `${rect.top  + (canvas.height * scale * 0.88)}px`;
+    }
+
+    function showPlayAgainBtn() {
+      playAgainBtn.style.display = 'block';
+      setTimeout(positionPlayAgainBtn, 50);
+    }
+
+    function hidePlayAgainBtn() {
+      playAgainBtn.style.display = 'none';
+    }
+
+    playAgainBtn.addEventListener('click', () => {
+      resetGame();
+    });
+
+    // ===== MOBILE (touch zones, viewport scaling) =====
+    function scaleCanvas() {
+      const scaleX = window.innerWidth  / canvas.width;
+      const scaleY = window.innerHeight / canvas.height;
+      const scale  = Math.min(scaleX, scaleY);
+      canvas.style.transform       = `scale(${scale})`;
+      canvas.style.transformOrigin = 'top left';
+      canvas.style.left = `${(window.innerWidth  - canvas.width  * scale) / 2}px`;
+      canvas.style.top  = `${(window.innerHeight - canvas.height * scale) / 2}px`;
+      if (gameState === 'ended') positionPlayAgainBtn();
+    }
+
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      initAudio();
+      if (gameState === 'not-started') { startGame(); return; }
+      if (gameState === 'ended')       { resetGame(); return; }
+      const rect = canvas.getBoundingClientRect();
+      const scale = rect.width / canvas.width;
+      Array.from(e.touches).forEach(touch => {
+        const tx = (touch.clientX - rect.left) / scale;
+        if (tx < canvas.width / 2) keys.left  = true;
+        else                        keys.right = true;
+      });
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', e => {
+      e.preventDefault();
+      keys.left = false;
+      keys.right = false;
+    }, { passive: false });
+
+    // ===== KEYBOARD INPUT =====
+    window.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); keys.left  = true; }
+      if (e.key === 'ArrowRight') { e.preventDefault(); keys.right = true; }
+      if (e.key === ' ') {
+        e.preventDefault();
+        initAudio();
+        if (gameState === 'not-started') startGame();
+        else if (gameState === 'ended')  resetGame();
+      }
+    });
+
+    window.addEventListener('keyup', e => {
+      if (e.key === 'ArrowLeft')  keys.left  = false;
+      if (e.key === 'ArrowRight') keys.right = false;
+    });
+
+    // ===== GAME LOOP =====
+    function gameLoop(timestamp) {
+      const dt = lastTimestamp ? Math.min((timestamp - lastTimestamp) / 1000, 0.05) : 0;
+      lastTimestamp = timestamp;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+      update(dt);
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    window.addEventListener('resize', scaleCanvas);
+    scaleCanvas();
+    requestAnimationFrame(gameLoop);
+
+  </script>
+</body>
+</html>
