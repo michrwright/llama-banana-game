@@ -674,10 +674,10 @@
         b.speed = currentSpeed;
         b.y += b.speed;
 
-        // Collision with llama
+        // Collision with llama head/snout (head is ~170-220px above foot)
         if (
-          b.y + b.height / 2 >= llama.y - llama.height &&
-          b.y - b.height / 2 <= llama.y &&
+          b.y + b.height / 2 >= llama.y - 222 &&
+          b.y - b.height / 2 <= llama.y - 168 &&
           b.x >= llama.x - llama.width / 2 - b.width / 2 &&
           b.x <= llama.x + llama.width / 2 + b.width / 2
         ) {
@@ -710,11 +710,10 @@
       scoreFlash.color = pts > 0 ? '#44FF88' : '#FF4444';
       scoreFlash.timer = 0.3;
 
-      const label = bananaConfig[banana.type].label;
       const sign = pts > 0 ? '+' : '';
-      catchMessage.text = `${label} ${sign}${pts}`;
+      catchMessage.text = `${sign}${pts}`;
       catchMessage.x = llama.x;
-      catchMessage.y = llama.y - llama.height - 10;
+      catchMessage.y = llama.y - 235;
       catchMessage.color = pts > 0 ? '#44FF88' : '#FF4444';
       catchMessage.timer = 0.8;
     }
