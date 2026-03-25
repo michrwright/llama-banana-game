@@ -310,11 +310,6 @@
       ctx.quadraticCurveTo(ex + 0.5, ey + 6.5, ex + 5.5, ey + 2.8);
       ctx.strokeStyle = 'rgba(65,45,35,0.22)'; ctx.lineWidth = 0.8; ctx.stroke();
 
-      // ── CATCH FLASH ───────────────────────────────────────
-      if (llamaFlash.active) {
-        ctx.fillStyle = llamaFlash.color + '44';
-        ctx.beginPath(); ctx.roundRect(cx - 48, cy - 240, 86, 240, 12); ctx.fill();
-      }
 
       ctx.restore();
     }
