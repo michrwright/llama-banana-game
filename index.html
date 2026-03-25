@@ -44,10 +44,6 @@
     const ctx = canvas.getContext('2d');
     const playAgainBtn = document.getElementById('playAgainBtn');
 
-    // Preload school badge (used on end screen)
-    const schoolBadge = new Image();
-    schoolBadge.crossOrigin = 'anonymous';
-    schoolBadge.src = 'https://www.gatehouseschool.co.uk/wp-content/themes/schoolcms/images/logo.png';
 
     // ===== GAME CONFIG (scores, speeds, timer) =====
     const CONFIG = {
@@ -736,16 +732,6 @@
       // Solid dark grey background
       ctx.fillStyle = '#3e3d3d';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // School badge watermark — centred, large, very faint
-      if (schoolBadge.complete && schoolBadge.naturalWidth > 0) {
-        const badgeH = 320;
-        const badgeW = (schoolBadge.naturalWidth / schoolBadge.naturalHeight) * badgeH;
-        ctx.save();
-        ctx.globalAlpha = 0.07;
-        ctx.drawImage(schoolBadge, (canvas.width - badgeW) / 2, (canvas.height - badgeH) / 2, badgeW, badgeH);
-        ctx.restore();
-      }
 
       // School red header bar
       ctx.fillStyle = '#b00802';
