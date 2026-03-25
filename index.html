@@ -137,47 +137,63 @@
         ctx.strokeStyle = 'rgba(135,125,118,0.28)'; ctx.lineWidth = 0.45; ctx.stroke();
       }
 
-      // ── PYJAMAS (clipped to body) ─────────────────────────
-      if (llamaConfig.hasPyjamas) {
-        ctx.save();
-        ctx.beginPath(); bodyPath(); ctx.clip();
-        ctx.fillStyle = llamaConfig.pyjamaColor;
-        ctx.fillRect(cx - 46, bTop - 10, 96, bBot - bTop + 20);
+      // ── PYJAMAS ────────────────────────────────────────────
+      // Shared helper — draws pattern over a bounding rect (inside active clip)
+      function pyjamaPattern(x0, y0, w, h) {
+        const c = llamaConfig.pyjamaStripeColor;
         if (llamaConfig.pyjamaPattern === 'stripes') {
-          ctx.strokeStyle = llamaConfig.pyjamaStripeColor; ctx.lineWidth = 3;
-          for (let i = -10; i < 110; i += 9) {
-            ctx.beginPath(); ctx.moveTo(cx-46+i, bTop-10); ctx.lineTo(cx-46+i+26, bBot+10); ctx.stroke();
+          ctx.strokeStyle = c; ctx.lineWidth = 3.5;
+          for (let i = -20; i < w + 30; i += 10) {
+            ctx.beginPath(); ctx.moveTo(x0+i, y0); ctx.lineTo(x0+i+h*0.5, y0+h); ctx.stroke();
           }
         } else if (llamaConfig.pyjamaPattern === 'dots') {
-          ctx.fillStyle = llamaConfig.pyjamaStripeColor;
-          for (let dx = 4; dx < 96; dx += 11) for (let dy = 4; dy < 76; dy += 11) {
-            ctx.beginPath(); ctx.arc(cx-46+dx, bTop-8+dy, 2.5, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = c;
+          for (let dx = 8; dx < w; dx += 13) for (let dy = 8; dy < h; dy += 13) {
+            ctx.beginPath(); ctx.arc(x0+dx, y0+dy, 3.5, 0, Math.PI*2); ctx.fill();
           }
         } else if (llamaConfig.pyjamaPattern === 'crosses') {
-          ctx.strokeStyle = llamaConfig.pyjamaStripeColor; ctx.lineWidth = 2;
-          for (let dx = 7; dx < 96; dx += 13) for (let dy = 7; dy < 76; dy += 13) {
+          ctx.strokeStyle = c; ctx.lineWidth = 2.2;
+          for (let dx = 8; dx < w; dx += 14) for (let dy = 8; dy < h; dy += 14) {
             ctx.beginPath();
-            ctx.moveTo(cx-46+dx-4, bTop-8+dy); ctx.lineTo(cx-46+dx+4, bTop-8+dy);
-            ctx.moveTo(cx-46+dx, bTop-8+dy-4); ctx.lineTo(cx-46+dx, bTop-8+dy+4);
+            ctx.moveTo(x0+dx-5, y0+dy); ctx.lineTo(x0+dx+5, y0+dy);
+            ctx.moveTo(x0+dx, y0+dy-5); ctx.lineTo(x0+dx, y0+dy+5);
             ctx.stroke();
           }
         } else if (llamaConfig.pyjamaPattern === 'stars') {
-          ctx.fillStyle = llamaConfig.pyjamaStripeColor;
-          for (let dx = 10; dx < 96; dx += 18) for (let dy = 10; dy < 76; dy += 18) {
-            const sx = cx - 46 + dx, sy = bTop - 8 + dy, r = 5, ir = 2.2, pts = 5;
+          ctx.fillStyle = c;
+          for (let dx = 14; dx < w; dx += 22) for (let dy = 14; dy < h; dy += 22) {
+            const sx = x0+dx, sy = y0+dy;
             ctx.beginPath();
-            for (let p = 0; p < pts * 2; p++) {
-              const angle = (p / (pts * 2)) * Math.PI * 2 - Math.PI / 2;
-              const rad = p % 2 === 0 ? r : ir;
-              p === 0 ? ctx.moveTo(sx + Math.cos(angle) * rad, sy + Math.sin(angle) * rad)
-                      : ctx.lineTo(sx + Math.cos(angle) * rad, sy + Math.sin(angle) * rad);
+            for (let p = 0; p < 10; p++) {
+              const a = (p/10)*Math.PI*2 - Math.PI/2;
+              const r = p%2===0 ? 9 : 4;
+              p===0 ? ctx.moveTo(sx+Math.cos(a)*r, sy+Math.sin(a)*r)
+                    : ctx.lineTo(sx+Math.cos(a)*r, sy+Math.sin(a)*r);
             }
             ctx.closePath(); ctx.fill();
           }
         }
+      }
+
+      if (llamaConfig.hasPyjamas) {
+        // Body
+        ctx.save();
+        ctx.beginPath(); bodyPath(); ctx.clip();
+        ctx.fillStyle = llamaConfig.pyjamaColor;
+        ctx.fillRect(cx-46, bTop-10, 96, bBot-bTop+20);
+        pyjamaPattern(cx-46, bTop-10, 96, bBot-bTop+20);
         ctx.restore();
         ctx.beginPath(); bodyPath();
         ctx.strokeStyle = O; ctx.lineWidth = 1.5; ctx.stroke();
+
+        // Buttons down front placket
+        [bTop+16, bTop+30, bTop+44].forEach(btnY => {
+          ctx.beginPath(); ctx.arc(cx-22, btnY, 3.5, 0, Math.PI*2);
+          ctx.fillStyle = '#fff'; ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 0.8; ctx.stroke();
+          ctx.beginPath(); ctx.arc(cx-22, btnY, 1.2, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill();
+        });
       }
 
       // ── FRONT LEGS (in front of body) ────────────────────
@@ -201,14 +217,29 @@
       nGrad.addColorStop(0.32, '#FFFFFF');
       nGrad.addColorStop(1, F);
 
-      ctx.beginPath();
-      ctx.moveTo(nbLx, nbY);
-      ctx.bezierCurveTo(nbLx - 11, nbY - 30, ntLx - 3, ntY + 32, ntLx, ntY);
-      ctx.lineTo(ntRx, ntY);
-      ctx.bezierCurveTo(ntRx + 9, ntY + 30, nbRx + 9, nbY - 24, nbRx, nbY);
-      ctx.closePath();
+      function neckPath() {
+        ctx.moveTo(nbLx, nbY);
+        ctx.bezierCurveTo(nbLx - 11, nbY - 30, ntLx - 3, ntY + 32, ntLx, ntY);
+        ctx.lineTo(ntRx, ntY);
+        ctx.bezierCurveTo(ntRx + 9, ntY + 30, nbRx + 9, nbY - 24, nbRx, nbY);
+        ctx.closePath();
+      }
+
+      ctx.beginPath(); neckPath();
       ctx.fillStyle = nGrad; ctx.fill();
       ctx.strokeStyle = O; ctx.lineWidth = 1.5; ctx.stroke();
+
+      // Neck pyjamas
+      if (llamaConfig.hasPyjamas) {
+        ctx.save();
+        ctx.beginPath(); neckPath(); ctx.clip();
+        ctx.fillStyle = llamaConfig.pyjamaColor;
+        ctx.fillRect(ntLx-12, ntY-5, (ntRx-ntLx)+22, nbY-ntY+10);
+        pyjamaPattern(ntLx-12, ntY-5, (ntRx-ntLx)+22, nbY-ntY+10);
+        ctx.restore();
+        ctx.beginPath(); neckPath();
+        ctx.strokeStyle = O; ctx.lineWidth = 1.5; ctx.stroke();
+      }
 
       // Fluffy mane along back of neck (left edge)
       for (let t = 0; t <= 6; t++) {
@@ -218,6 +249,26 @@
         ctx.beginPath(); ctx.arc(mx - 5, my, 5.5 - tt * 1.5, Math.PI * 0.45, Math.PI * 1.6);
         ctx.fillStyle = '#fff'; ctx.fill();
         ctx.strokeStyle = 'rgba(135,125,118,0.28)'; ctx.lineWidth = 0.4; ctx.stroke();
+      }
+
+      // ── COLLAR ───────────────────────────────────────────
+      if (llamaConfig.hasPyjamas) {
+        // Left lapel
+        ctx.beginPath();
+        ctx.moveTo(ntLx, ntY);
+        ctx.bezierCurveTo(ntLx - 6, ntY + 10, ntLx - 2, ntY + 22, ntLx + 5, ntY + 18);
+        ctx.lineTo(ntLx + 8, ntY);
+        ctx.closePath();
+        ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 0.8; ctx.stroke();
+        // Right lapel
+        ctx.beginPath();
+        ctx.moveTo(ntRx, ntY);
+        ctx.bezierCurveTo(ntRx + 5, ntY + 10, ntRx + 2, ntY + 22, ntRx - 4, ntY + 18);
+        ctx.lineTo(ntRx - 6, ntY);
+        ctx.closePath();
+        ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 0.8; ctx.stroke();
       }
 
       // ── HEAD ─────────────────────────────────────────────
