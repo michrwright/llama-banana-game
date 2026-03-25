@@ -994,6 +994,61 @@
       requestAnimationFrame(gameLoop);
     }
 
+    // ===== DEMO STATES (classroom presentation) =====
+    // ?demo=0  boring start state
+    // ?demo=1  after Class 1 (pyjamas, name, background)
+    // ?demo=2  after Class 2 (gold + rotten bananas, sounds)
+    // ?demo=3  after Class 3 (title, win message, credits — finished)
+    // No param = live game (whatever has actually been built)
+    (function applyDemoState() {
+      const param = new URLSearchParams(window.location.search).get('demo');
+      if (param === null) return;
+
+      // Reset to boring baseline
+      llamaConfig.hasPyjamas    = false;
+      llamaConfig.name          = '';
+      backgroundConfig.elements = [];
+      backgroundConfig.skyColor = '#87CEEB';
+      bananaConfig.goldActive   = false;
+      bananaConfig.rottenActive = false;
+      CONFIG.gameTitle          = 'Llama Game';
+      CONFIG.winMessage         = 'Game over!';
+      CONFIG.credits.class1     = '';
+      CONFIG.credits.class2     = '';
+      CONFIG.credits.class3     = '';
+
+      if (param === '0') return; // stop here — boring start
+
+      if (param >= '1') {
+        // Class 1: pyjamas, name, sun, palm tree, waves
+        llamaConfig.hasPyjamas        = true;
+        llamaConfig.pyjamaColor       = '#ff69b4';
+        llamaConfig.pyjamaPattern     = 'stripes';
+        llamaConfig.pyjamaStripeColor = '#ffffff';
+        llamaConfig.name              = 'Dolly';
+        backgroundConfig.elements     = [
+          { type: 'sun',      x: 380, y: 80,  color: '#FFD700', size: 40 },
+          { type: 'palmTree', x: 60 },
+          { type: 'waves',    color: '#5BA4CF' },
+        ];
+        CONFIG.credits.class1 = 'Look & feel: Class 1';
+      }
+
+      if (param >= '2') {
+        // Class 2: gold and rotten bananas active
+        bananaConfig.goldActive   = true;
+        bananaConfig.rottenActive = true;
+        CONFIG.credits.class2     = 'Game mechanics: Class 2';
+      }
+
+      if (param >= '3') {
+        // Class 3: title, win message, all credits
+        CONFIG.gameTitle      = "Dolly's Banana Dash";
+        CONFIG.winMessage     = 'AMAZING! What a catch!';
+        CONFIG.credits.class3 = 'Name & finishing touches: Class 3';
+      }
+    })();
+
     window.addEventListener('resize', scaleCanvas);
     scaleCanvas();
     requestAnimationFrame(gameLoop);
