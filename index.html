@@ -387,40 +387,72 @@
     function drawBanana(banana) {
       const cfg = bananaConfig[banana.type];
       const { x, y } = banana;
+      const s = banana.width / 24; // scale factor
       ctx.save();
 
       // Glow for gold
       if (cfg.glowColor) {
         ctx.shadowColor = cfg.glowColor;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 14;
       }
 
-      // Draw crescent banana shape
-      ctx.strokeStyle = cfg.color;
-      ctx.lineWidth = banana.width * 0.45;
-      ctx.lineCap = 'round';
+      // --- Filled banana crescent body ---
+      // Outer curve (back of banana)
       ctx.beginPath();
-      ctx.arc(x, y, banana.width * 0.55, Math.PI * 1.1, Math.PI * 1.95);
+      ctx.moveTo(x - 10 * s, y + 14 * s);
+      ctx.bezierCurveTo(
+        x - 18 * s, y - 2 * s,
+        x - 8 * s,  y - 18 * s,
+        x + 4 * s,  y - 16 * s
+      );
+      // Inner curve (belly of banana)
+      ctx.bezierCurveTo(
+        x - 2 * s,  y - 10 * s,
+        x - 10 * s, y + 2 * s,
+        x - 2 * s,  y + 14 * s
+      );
+      ctx.closePath();
+      ctx.fillStyle = cfg.color;
+      ctx.fill();
+
+      // Outline for definition
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+      ctx.lineWidth = 1 * s;
       ctx.stroke();
 
-      // Rotten: add dark spots
+      // --- Stem nub at top ---
+      ctx.beginPath();
+      ctx.moveTo(x + 4 * s, y - 16 * s);
+      ctx.bezierCurveTo(
+        x + 8 * s,  y - 20 * s,
+        x + 10 * s, y - 18 * s,
+        x + 7 * s,  y - 14 * s
+      );
+      ctx.strokeStyle = '#7A5C00';
+      ctx.lineWidth = 2 * s;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+
+      // --- Rotten: dark blotches ---
       if (banana.type === 'rotten') {
-        ctx.fillStyle = '#3A2010';
-        ctx.shadowBlur = 0;
-        [[-4, -2], [3, 2], [-1, 5]].forEach(([dx, dy]) => {
+        ctx.fillStyle = 'rgba(40, 15, 5, 0.55)';
+        [[-5 * s, 2 * s, 3.5 * s], [0, -4 * s, 2.5 * s], [-7 * s, 8 * s, 2 * s]].forEach(([dx, dy, r]) => {
           ctx.beginPath();
-          ctx.arc(x + dx, y + dy, 2.5, 0, Math.PI * 2);
+          ctx.ellipse(x + dx, y + dy, r, r * 0.7, 0.4, 0, Math.PI * 2);
           ctx.fill();
         });
       }
 
-      // Gold sparkle
+      // --- Gold: sparkle dots ---
       if (banana.type === 'gold') {
         ctx.fillStyle = '#FFFDE0';
-        ctx.shadowBlur = 0;
-        ctx.beginPath();
-        ctx.arc(x - 5, y - 7, 2, 0, Math.PI * 2);
-        ctx.fill();
+        [[- 3 * s, -8 * s], [- 8 * s, 2 * s]].forEach(([dx, dy]) => {
+          ctx.beginPath();
+          ctx.arc(x + dx, y + dy, 2 * s, 0, Math.PI * 2);
+          ctx.fill();
+        });
       }
 
       ctx.restore();
