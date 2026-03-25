@@ -24,15 +24,15 @@
       padding: 14px 36px;
       font-size: 22px;
       font-weight: bold;
-      background: #FFD700;
-      color: #1a1a2e;
+      background: #b00802;
+      color: #ffffff;
       border: none;
       border-radius: 12px;
       cursor: pointer;
       z-index: 10;
       min-height: 52px;
     }
-    #playAgainBtn:hover { background: #FFC200; }
+    #playAgainBtn:hover { background: #8a0602; }
   </style>
 </head>
 <body>
@@ -696,8 +696,10 @@
     }
 
     function drawEndScreen() {
-      // Dim overlay
-      ctx.fillStyle = 'rgba(10, 10, 30, 0.82)';
+      // Gatehouse School colours: red #b00802, dark grey #3e3d3d, white #ffffff
+
+      // Dark grey overlay
+      ctx.fillStyle = 'rgba(62, 61, 61, 0.93)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.textAlign = 'center';
@@ -707,11 +709,11 @@
         CONFIG.winMessage,
         canvas.width / 2, 160,
         'bold 38px sans-serif',
-        '#FFFFFF', '#000', 6
+        '#FFFFFF', '#3e3d3d', 4
       );
 
       // Final score
-      const scoreColor = score < 0 ? '#FF6666' : '#FFD700';
+      const scoreColor = score < 0 ? '#b00802' : '#FFD700';
       textShadow(
         score.toString(),
         canvas.width / 2, 260,
@@ -722,32 +724,43 @@
         'points',
         canvas.width / 2, 300,
         '24px sans-serif',
-        '#CCCCCC'
+        '#FFFFFF'
       );
 
-      // Credits
-      const creditLines = [
-        'Made by Year 4, Gatehouse School',
-        'Science Week 2026',
-      ];
-      if (CONFIG.credits.class1) creditLines.push(CONFIG.credits.class1);
-      if (CONFIG.credits.class2) creditLines.push(CONFIG.credits.class2);
-      if (CONFIG.credits.class3) creditLines.push(CONFIG.credits.class3);
-
-      // Divider
-      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-      ctx.lineWidth = 1;
+      // School red divider
+      ctx.strokeStyle = '#b00802';
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(60, 330);
       ctx.lineTo(canvas.width - 60, 330);
       ctx.stroke();
 
-      creditLines.forEach((line, i) => {
+      // Credits header in school red
+      textShadow(
+        'Made by Year 4, Gatehouse School',
+        canvas.width / 2, 362,
+        'bold 18px sans-serif',
+        '#b00802', '#000', 3
+      );
+      textShadow(
+        'Science Week 2026',
+        canvas.width / 2, 386,
+        'bold 16px sans-serif',
+        '#b00802', '#000', 3
+      );
+
+      // Class contributions in white
+      const classLines = [];
+      if (CONFIG.credits.class1) classLines.push(CONFIG.credits.class1);
+      if (CONFIG.credits.class2) classLines.push(CONFIG.credits.class2);
+      if (CONFIG.credits.class3) classLines.push(CONFIG.credits.class3);
+
+      classLines.forEach((line, i) => {
         textShadow(
           line,
-          canvas.width / 2, 360 + i * 26,
-          i < 2 ? 'bold 18px sans-serif' : '16px sans-serif',
-          i < 2 ? '#FFFDE0' : '#AAAAAA'
+          canvas.width / 2, 416 + i * 24,
+          '15px sans-serif',
+          '#FFFFFF', '#000', 2
         );
       });
     }
