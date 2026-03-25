@@ -74,13 +74,50 @@
       const F = llamaConfig.bodyColor;
       const O = llamaConfig.outlineColor;
 
+      // ── PYJAMA PATTERN HELPER (used for body, neck, legs) ──
+      function pyjamaPattern(x0, y0, w, h) {
+        const c = llamaConfig.pyjamaStripeColor;
+        if (llamaConfig.pyjamaPattern === 'stripes') {
+          ctx.strokeStyle = c; ctx.lineWidth = 3.5;
+          for (let i = -20; i < w + 30; i += 10) {
+            ctx.beginPath(); ctx.moveTo(x0+i, y0); ctx.lineTo(x0+i+h*0.5, y0+h); ctx.stroke();
+          }
+        } else if (llamaConfig.pyjamaPattern === 'dots') {
+          ctx.fillStyle = c;
+          for (let dx = 8; dx < w; dx += 13) for (let dy = 8; dy < h; dy += 13) {
+            ctx.beginPath(); ctx.arc(x0+dx, y0+dy, 3.5, 0, Math.PI*2); ctx.fill();
+          }
+        } else if (llamaConfig.pyjamaPattern === 'crosses') {
+          ctx.strokeStyle = c; ctx.lineWidth = 2.2;
+          for (let dx = 8; dx < w; dx += 14) for (let dy = 8; dy < h; dy += 14) {
+            ctx.beginPath();
+            ctx.moveTo(x0+dx-5, y0+dy); ctx.lineTo(x0+dx+5, y0+dy);
+            ctx.moveTo(x0+dx, y0+dy-5); ctx.lineTo(x0+dx, y0+dy+5);
+            ctx.stroke();
+          }
+        } else if (llamaConfig.pyjamaPattern === 'stars') {
+          ctx.fillStyle = c;
+          for (let dx = 14; dx < w; dx += 22) for (let dy = 14; dy < h; dy += 22) {
+            const sx = x0+dx, sy = y0+dy;
+            ctx.beginPath();
+            for (let p = 0; p < 10; p++) {
+              const a = (p/10)*Math.PI*2 - Math.PI/2;
+              const r = p%2===0 ? 9 : 4;
+              p===0 ? ctx.moveTo(sx+Math.cos(a)*r, sy+Math.sin(a)*r)
+                    : ctx.lineTo(sx+Math.cos(a)*r, sy+Math.sin(a)*r);
+            }
+            ctx.closePath(); ctx.fill();
+          }
+        }
+      }
+
       // ── HELPER: draw one leg ──────────────────────────────
       function drawLeg(lx, yTop, isFront) {
         const g = ctx.createLinearGradient(lx - 7, 0, lx + 8, 0);
         g.addColorStop(0, 'rgba(145,138,132,0.55)');
         g.addColorStop(0.4, isFront ? '#FFFFFF' : 'rgba(230,226,222,0.88)');
         g.addColorStop(1, 'rgba(155,148,142,0.4)');
-        // Upper leg — slightly tapered
+        // Upper leg
         ctx.beginPath();
         ctx.moveTo(lx - 5.5, yTop);
         ctx.bezierCurveTo(lx - 6.5, yTop + 14, lx - 5, yTop + 26, lx - 4, yTop + 32);
@@ -89,7 +126,7 @@
         ctx.closePath();
         ctx.fillStyle = g; ctx.fill();
         ctx.strokeStyle = O; ctx.lineWidth = 1; ctx.stroke();
-        // Lower leg — thinner
+        // Lower leg
         ctx.beginPath();
         ctx.moveTo(lx - 3, yTop + 30); ctx.lineTo(lx - 3, yTop + 57);
         ctx.lineTo(lx + 3, yTop + 57); ctx.lineTo(lx + 3, yTop + 30);
@@ -100,6 +137,40 @@
         ctx.beginPath(); ctx.roundRect(lx - 5.5, yTop + 54, 11, 9, [0, 0, 4, 4]);
         ctx.fillStyle = '#4a3020'; ctx.fill();
         ctx.strokeStyle = '#2a1408'; ctx.lineWidth = 0.8; ctx.stroke();
+        // Pyjama fabric on leg
+        if (llamaConfig.hasPyjamas) {
+          // Upper leg
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(lx - 5.5, yTop);
+          ctx.bezierCurveTo(lx - 6.5, yTop + 14, lx - 5, yTop + 26, lx - 4, yTop + 32);
+          ctx.lineTo(lx + 4, yTop + 32);
+          ctx.bezierCurveTo(lx + 5, yTop + 26, lx + 6.5, yTop + 14, lx + 5.5, yTop);
+          ctx.closePath(); ctx.clip();
+          ctx.fillStyle = llamaConfig.pyjamaColor; ctx.fillRect(lx-7, yTop, 15, 33);
+          pyjamaPattern(lx-7, yTop, 15, 33);
+          ctx.restore();
+          ctx.beginPath();
+          ctx.moveTo(lx - 5.5, yTop);
+          ctx.bezierCurveTo(lx - 6.5, yTop + 14, lx - 5, yTop + 26, lx - 4, yTop + 32);
+          ctx.lineTo(lx + 4, yTop + 32);
+          ctx.bezierCurveTo(lx + 5, yTop + 26, lx + 6.5, yTop + 14, lx + 5.5, yTop);
+          ctx.closePath(); ctx.strokeStyle = O; ctx.lineWidth = 1; ctx.stroke();
+          // Lower leg
+          ctx.save();
+          ctx.beginPath(); ctx.rect(lx-3, yTop+30, 6, 22); ctx.clip();
+          ctx.fillStyle = llamaConfig.pyjamaColor; ctx.fillRect(lx-3, yTop+30, 6, 22);
+          pyjamaPattern(lx-3, yTop+30, 6, 22);
+          ctx.restore();
+          ctx.beginPath();
+          ctx.moveTo(lx-3, yTop+30); ctx.lineTo(lx-3, yTop+52);
+          ctx.lineTo(lx+3, yTop+52); ctx.lineTo(lx+3, yTop+30);
+          ctx.closePath(); ctx.strokeStyle = O; ctx.lineWidth = 0.8; ctx.stroke();
+          // White cuff above hoof
+          ctx.beginPath(); ctx.roundRect(lx-5.5, yTop+50, 11, 6, [3,3,0,0]);
+          ctx.fillStyle = '#fff'; ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 0.8; ctx.stroke();
+        }
       }
 
       const legTop = cy - 64;
@@ -138,43 +209,6 @@
       }
 
       // ── PYJAMAS ────────────────────────────────────────────
-      // Shared helper — draws pattern over a bounding rect (inside active clip)
-      function pyjamaPattern(x0, y0, w, h) {
-        const c = llamaConfig.pyjamaStripeColor;
-        if (llamaConfig.pyjamaPattern === 'stripes') {
-          ctx.strokeStyle = c; ctx.lineWidth = 3.5;
-          for (let i = -20; i < w + 30; i += 10) {
-            ctx.beginPath(); ctx.moveTo(x0+i, y0); ctx.lineTo(x0+i+h*0.5, y0+h); ctx.stroke();
-          }
-        } else if (llamaConfig.pyjamaPattern === 'dots') {
-          ctx.fillStyle = c;
-          for (let dx = 8; dx < w; dx += 13) for (let dy = 8; dy < h; dy += 13) {
-            ctx.beginPath(); ctx.arc(x0+dx, y0+dy, 3.5, 0, Math.PI*2); ctx.fill();
-          }
-        } else if (llamaConfig.pyjamaPattern === 'crosses') {
-          ctx.strokeStyle = c; ctx.lineWidth = 2.2;
-          for (let dx = 8; dx < w; dx += 14) for (let dy = 8; dy < h; dy += 14) {
-            ctx.beginPath();
-            ctx.moveTo(x0+dx-5, y0+dy); ctx.lineTo(x0+dx+5, y0+dy);
-            ctx.moveTo(x0+dx, y0+dy-5); ctx.lineTo(x0+dx, y0+dy+5);
-            ctx.stroke();
-          }
-        } else if (llamaConfig.pyjamaPattern === 'stars') {
-          ctx.fillStyle = c;
-          for (let dx = 14; dx < w; dx += 22) for (let dy = 14; dy < h; dy += 22) {
-            const sx = x0+dx, sy = y0+dy;
-            ctx.beginPath();
-            for (let p = 0; p < 10; p++) {
-              const a = (p/10)*Math.PI*2 - Math.PI/2;
-              const r = p%2===0 ? 9 : 4;
-              p===0 ? ctx.moveTo(sx+Math.cos(a)*r, sy+Math.sin(a)*r)
-                    : ctx.lineTo(sx+Math.cos(a)*r, sy+Math.sin(a)*r);
-            }
-            ctx.closePath(); ctx.fill();
-          }
-        }
-      }
-
       if (llamaConfig.hasPyjamas) {
         // Body
         ctx.save();
@@ -194,6 +228,27 @@
           ctx.beginPath(); ctx.arc(cx-22, btnY, 1.2, 0, Math.PI*2);
           ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill();
         });
+
+        // Breast pocket (top-right of body front)
+        const pkX = cx + 8, pkY = bTop + 12, pkW = 16, pkH = 13;
+        ctx.beginPath(); ctx.roundRect(pkX, pkY, pkW, pkH, 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+        // Pocket flap (curved fold at top)
+        ctx.beginPath();
+        ctx.moveTo(pkX, pkY + 4);
+        ctx.quadraticCurveTo(pkX + pkW/2, pkY - 2, pkX + pkW, pkY + 4);
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+        // Tiny star in pocket
+        ctx.fillStyle = llamaConfig.pyjamaStripeColor;
+        ctx.beginPath();
+        for (let p = 0; p < 10; p++) {
+          const a = (p/10)*Math.PI*2 - Math.PI/2;
+          const r = p%2===0 ? 4 : 1.8;
+          const sx2 = pkX + pkW/2 + Math.cos(a)*r, sy2 = pkY + pkH/2 + 1 + Math.sin(a)*r;
+          p===0 ? ctx.moveTo(sx2, sy2) : ctx.lineTo(sx2, sy2);
+        }
+        ctx.closePath(); ctx.fill();
       }
 
       // ── FRONT LEGS (in front of body) ────────────────────
@@ -253,22 +308,22 @@
 
       // ── COLLAR ───────────────────────────────────────────
       if (llamaConfig.hasPyjamas) {
-        // Left lapel
+        // Left lapel — wider, sweeps further out and down
         ctx.beginPath();
         ctx.moveTo(ntLx, ntY);
-        ctx.bezierCurveTo(ntLx - 6, ntY + 10, ntLx - 2, ntY + 22, ntLx + 5, ntY + 18);
-        ctx.lineTo(ntLx + 8, ntY);
+        ctx.bezierCurveTo(ntLx - 12, ntY + 8, ntLx - 8, ntY + 28, ntLx + 6, ntY + 24);
+        ctx.lineTo(ntLx + 10, ntY + 2);
         ctx.closePath();
         ctx.fillStyle = '#fff'; ctx.fill();
-        ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 0.8; ctx.stroke();
-        // Right lapel
+        ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1; ctx.stroke();
+        // Right lapel — wider, sweeps further out and down
         ctx.beginPath();
         ctx.moveTo(ntRx, ntY);
-        ctx.bezierCurveTo(ntRx + 5, ntY + 10, ntRx + 2, ntY + 22, ntRx - 4, ntY + 18);
-        ctx.lineTo(ntRx - 6, ntY);
+        ctx.bezierCurveTo(ntRx + 11, ntY + 8, ntRx + 7, ntY + 28, ntRx - 5, ntY + 24);
+        ctx.lineTo(ntRx - 8, ntY + 2);
         ctx.closePath();
         ctx.fillStyle = '#fff'; ctx.fill();
-        ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 0.8; ctx.stroke();
+        ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1; ctx.stroke();
       }
 
       // ── HEAD ─────────────────────────────────────────────
