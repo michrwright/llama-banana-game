@@ -759,10 +759,10 @@
       // Timer
       const timerColor = timeRemaining <= 10 ? '#FF4444' : '#FFFFFF';
       const timerSize  = timeRemaining <= 10 ? 48 : 38;
-      ctx.textAlign = 'center';
+      ctx.textAlign = 'right';
       textShadow(
         Math.ceil(timeRemaining).toString(),
-        canvas.width / 2, 48,
+        canvas.width - 16, 48,
         `bold ${timerSize}px sans-serif`,
         timerColor
       );
