@@ -70,127 +70,190 @@
     };
 
     function drawLlama(cx, cy) {
-      // cx = centre x, cy = feet level (bottom)
       ctx.save();
       const F = llamaConfig.bodyColor;
       const O = llamaConfig.outlineColor;
 
-      function shape(fill, stroke, lw, fn) {
-        ctx.beginPath(); fn();
-        ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = lw;
-        ctx.fill(); ctx.stroke();
-      }
+      // Body bounds
+      const bx = cx - 28, by = cy - 62, bw = 56, bh = 36;
 
-      // Body bounds (used for pyjamas clipping too)
-      const bx = cx - 26, by = cy - 60, bw = 54, bh = 34;
-
-      // --- BACK LEGS (drawn behind body) ---
-      [[cx + 10, cy - 28], [cx + 20, cy - 28]].forEach(([lx, ly]) => {
-        shape(F, O, 1.5, () => ctx.roundRect(lx - 4, ly, 8, 28, [3, 3, 4, 4]));
+      // -- BACK LEGS --
+      [cx + 9, cx + 20].forEach(lx => {
+        const lg = ctx.createLinearGradient(lx - 4, 0, lx + 5, 0);
+        lg.addColorStop(0, F); lg.addColorStop(0.45, '#fff'); lg.addColorStop(1, 'rgba(160,160,160,0.7)');
+        ctx.beginPath();
+        ctx.moveTo(lx - 4, cy - 32); ctx.lineTo(lx - 3.5, cy - 5);
+        ctx.lineTo(lx + 3.5, cy - 5); ctx.lineTo(lx + 4, cy - 32);
+        ctx.closePath();
+        ctx.fillStyle = lg; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 1.2; ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(lx - 5, cy - 7, 10, 7, [1,1,4,4]);
+        ctx.fillStyle = '#5a3e28'; ctx.fill(); ctx.strokeStyle = '#3a2010'; ctx.lineWidth = 1; ctx.stroke();
       });
 
-      // --- BODY ---
-      shape(F, O, 1.5, () => ctx.roundRect(bx, by, bw, bh, 14));
+      // -- BODY --
+      const bg = ctx.createRadialGradient(cx - 8, by + 10, 3, cx, by + bh * 0.5, bw * 0.75);
+      bg.addColorStop(0, '#FFFFFF'); bg.addColorStop(0.55, F); bg.addColorStop(1, 'rgba(150,150,150,0.65)');
+      ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 15);
+      ctx.fillStyle = bg; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 1.5; ctx.stroke();
 
-      // --- PYJAMAS (clipped to body) ---
+      // Fluffy bumps along top of body
+      ctx.beginPath();
+      for (let i = 0; i <= 6; i++) {
+        const fx = bx + 5 + (bw - 10) * i / 6;
+        ctx.arc(fx, by, 4.5 + Math.sin(i * 1.4) * 1.5, Math.PI, 0);
+      }
+      ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 0.8; ctx.stroke();
+
+      // -- PYJAMAS (clipped to body) --
       if (llamaConfig.hasPyjamas) {
         ctx.save();
-        ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 14); ctx.clip();
-        ctx.fillStyle = llamaConfig.pyjamaColor;
-        ctx.fillRect(bx, by, bw, bh);
+        ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 15); ctx.clip();
+        ctx.fillStyle = llamaConfig.pyjamaColor; ctx.fillRect(bx, by, bw, bh);
         if (llamaConfig.pyjamaPattern === 'stripes') {
           ctx.strokeStyle = llamaConfig.pyjamaStripeColor; ctx.lineWidth = 3;
           for (let i = -10; i < bw + 20; i += 8) {
-            ctx.beginPath(); ctx.moveTo(bx + i, by); ctx.lineTo(bx + i + 20, by + bh); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(bx+i, by); ctx.lineTo(bx+i+20, by+bh); ctx.stroke();
           }
         } else if (llamaConfig.pyjamaPattern === 'dots') {
           ctx.fillStyle = llamaConfig.pyjamaStripeColor;
           for (let dx = 6; dx < bw; dx += 10) for (let dy = 6; dy < bh; dy += 10) {
-            ctx.beginPath(); ctx.arc(bx + dx, by + dy, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(bx+dx, by+dy, 2.5, 0, Math.PI*2); ctx.fill();
           }
         } else if (llamaConfig.pyjamaPattern === 'crosses') {
           ctx.strokeStyle = llamaConfig.pyjamaStripeColor; ctx.lineWidth = 2;
           for (let dx = 8; dx < bw; dx += 12) for (let dy = 8; dy < bh; dy += 12) {
             ctx.beginPath();
-            ctx.moveTo(bx+dx-4, by+dy); ctx.lineTo(bx+dx+4, by+dy);
-            ctx.moveTo(bx+dx, by+dy-4); ctx.lineTo(bx+dx, by+dy+4);
+            ctx.moveTo(bx+dx-4,by+dy); ctx.lineTo(bx+dx+4,by+dy);
+            ctx.moveTo(bx+dx,by+dy-4); ctx.lineTo(bx+dx,by+dy+4);
             ctx.stroke();
           }
         }
         ctx.restore();
-        ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 14);
+        ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 15);
         ctx.strokeStyle = O; ctx.lineWidth = 1.5; ctx.stroke();
       }
 
-      // --- FRONT LEGS (in front of body) ---
-      [[cx - 20, cy - 28], [cx - 10, cy - 28]].forEach(([lx, ly]) => {
-        shape(F, O, 1.5, () => ctx.roundRect(lx - 4, ly, 8, 28, [3, 3, 4, 4]));
+      // -- FRONT LEGS --
+      [cx - 20, cx - 9].forEach(lx => {
+        const lg = ctx.createLinearGradient(lx - 4, 0, lx + 5, 0);
+        lg.addColorStop(0, F); lg.addColorStop(0.45, '#fff'); lg.addColorStop(1, 'rgba(160,160,160,0.7)');
+        ctx.beginPath();
+        ctx.moveTo(lx - 4, cy - 32); ctx.lineTo(lx - 3.5, cy - 5);
+        ctx.lineTo(lx + 3.5, cy - 5); ctx.lineTo(lx + 4, cy - 32);
+        ctx.closePath();
+        ctx.fillStyle = lg; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 1.2; ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(lx - 5, cy - 7, 10, 7, [1,1,4,4]);
+        ctx.fillStyle = '#5a3e28'; ctx.fill(); ctx.strokeStyle = '#3a2010'; ctx.lineWidth = 1; ctx.stroke();
       });
 
-      // --- TAIL (fluffy blob at back) ---
-      shape(F, O, 1.5, () => ctx.ellipse(cx + 28, by + 16, 9, 7, 0.3, 0, Math.PI * 2));
+      // -- FLUFFY TAIL --
+      ctx.beginPath(); ctx.arc(cx + 30, by + 20, 11, 0, Math.PI*2);
+      ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 1; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx + 28, by + 16, 8, 0, Math.PI*2);
+      ctx.fillStyle = F; ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 34, by + 24, 7, 0, Math.PI*2);
+      ctx.fillStyle = F; ctx.fill();
 
-      // --- NECK (long, slightly curved, forward-leaning) ---
-      const nTopX = cx - 14, nTopY = by - 20;
-      const nBotX = cx - 4,  nBotY = by + 6;
+      // -- NECK (long, curved, with gradient) --
+      const nTopX = cx - 14, nTopY = by - 22;
+      const nBotX = cx - 3,  nBotY = by + 5;
+      const ng = ctx.createLinearGradient(nTopX - 10, 0, nTopX + 10, 0);
+      ng.addColorStop(0, 'rgba(190,190,190,0.6)'); ng.addColorStop(0.4, '#fff'); ng.addColorStop(1, F);
       ctx.beginPath();
-      ctx.moveTo(nBotX - 7, nBotY);
-      ctx.bezierCurveTo(nBotX - 12, nBotY - 14, nTopX - 7, nTopY + 12, nTopX - 6, nTopY);
-      ctx.lineTo(nTopX + 6, nTopY);
-      ctx.bezierCurveTo(nBotX + 4, nTopY + 12, nBotX + 4, nBotY - 10, nBotX + 5, nBotY);
+      ctx.moveTo(nBotX - 8, nBotY);
+      ctx.bezierCurveTo(nBotX - 14, nBotY - 14, nTopX - 8, nTopY + 14, nTopX - 7, nTopY);
+      ctx.lineTo(nTopX + 7, nTopY);
+      ctx.bezierCurveTo(nBotX + 5, nTopY + 14, nBotX + 5, nBotY - 10, nBotX + 6, nBotY);
       ctx.closePath();
-      ctx.fillStyle = F; ctx.strokeStyle = O; ctx.lineWidth = 1.5;
-      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = ng; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 1.5; ctx.stroke();
 
-      // --- HEAD ---
-      const hx = nTopX, hy = nTopY - 9;
-      shape(F, O, 1.5, () => ctx.ellipse(hx, hy, 10, 9, -0.1, 0, Math.PI * 2));
-
-      // --- SNOUT (key llama feature — long elongated jaw) ---
+      // Fluffy mane bumps along back of neck
       ctx.beginPath();
-      ctx.moveTo(hx + 2,  hy + 3);
-      ctx.bezierCurveTo(hx + 16, hy + 1, hx + 18, hy + 9, hx + 11, hy + 13);
-      ctx.bezierCurveTo(hx +  5, hy + 15, hx - 2,  hy + 12, hx,     hy + 7);
+      for (let t = 0; t <= 4; t++) {
+        const tt = t / 4;
+        const mx = (nTopX - 7) + ((nBotX - 8) - (nTopX - 7)) * tt;
+        const my = nTopY + (nBotY - nTopY) * tt;
+        ctx.arc(mx - 4, my, 4.5, Math.PI * 0.6, Math.PI * 1.5);
+      }
+      ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 0.8; ctx.stroke();
+
+      // -- HEAD --
+      const hx = nTopX, hy = nTopY - 10;
+      const hg = ctx.createRadialGradient(hx - 3, hy - 3, 1, hx, hy, 12);
+      hg.addColorStop(0, '#fff'); hg.addColorStop(1, F);
+      ctx.beginPath(); ctx.ellipse(hx, hy, 11, 10, -0.1, 0, Math.PI*2);
+      ctx.fillStyle = hg; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 1.5; ctx.stroke();
+
+      // -- SNOUT (elongated, distinctive llama muzzle) --
+      ctx.beginPath();
+      ctx.moveTo(hx + 2, hy + 3);
+      ctx.bezierCurveTo(hx + 19, hy + 1, hx + 21, hy + 11, hx + 13, hy + 16);
+      ctx.bezierCurveTo(hx + 6,  hy + 18, hx - 3,  hy + 14, hx,      hy + 8);
       ctx.closePath();
-      ctx.fillStyle = F; ctx.strokeStyle = O; ctx.lineWidth = 1.5;
-      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = F; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 1.5; ctx.stroke();
 
-      // --- EARS (tall, narrow, pointy — most recognisable llama feature) ---
-      // Back ear (slightly behind, greyer)
-      shape('#C8C8C8', O, 1, () => {
-        ctx.moveTo(hx - 5, hy - 6); ctx.lineTo(hx - 8, hy - 24); ctx.lineTo(hx + 1, hy - 6); ctx.closePath();
-      });
-      // Front ear
-      shape(F, O, 1.5, () => {
-        ctx.moveTo(hx + 2, hy - 7); ctx.lineTo(hx + 5, hy - 26); ctx.lineTo(hx + 11, hy - 7); ctx.closePath();
-      });
-      // Inner ear pink
+      // Philtrum (the split lip — very llama)
       ctx.beginPath();
-      ctx.moveTo(hx + 3, hy - 9); ctx.lineTo(hx + 5.5, hy - 23); ctx.lineTo(hx + 9, hy - 9); ctx.closePath();
-      ctx.fillStyle = '#FFB6C1'; ctx.fill();
+      ctx.moveTo(hx + 11, hy + 14);
+      ctx.quadraticCurveTo(hx + 9.5, hy + 17, hx + 8, hy + 15);
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1; ctx.stroke();
 
-      // --- EYE ---
+      // Nostrils
+      ctx.fillStyle = 'rgba(0,0,0,0.22)';
+      ctx.beginPath(); ctx.ellipse(hx + 8,  hy + 11, 2.2, 1.3, 0.5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(hx + 15, hy + 10, 2.2, 1.3, -0.3, 0, Math.PI*2); ctx.fill();
+
+      // -- EARS --
+      // Back ear
       ctx.beginPath();
-      ctx.ellipse(hx + 6, hy - 1, 3, 2.5, 0.1, 0, Math.PI * 2);
-      ctx.fillStyle = '#1a1a1a'; ctx.fill();
-      ctx.beginPath(); ctx.arc(hx + 7.5, hy - 2, 1, 0, Math.PI * 2);
+      ctx.moveTo(hx - 6, hy - 7); ctx.lineTo(hx - 10, hy - 30); ctx.lineTo(hx - 1, hy - 7);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(195,195,195,0.85)'; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 1; ctx.stroke();
+
+      // Front ear (outer)
+      ctx.beginPath();
+      ctx.moveTo(hx + 1, hy - 8); ctx.lineTo(hx + 5, hy - 32); ctx.lineTo(hx + 13, hy - 8);
+      ctx.closePath();
+      ctx.fillStyle = F; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 1.5; ctx.stroke();
+      // Inner ear
+      ctx.beginPath();
+      ctx.moveTo(hx + 2.5, hy - 10); ctx.lineTo(hx + 5.5, hy - 28); ctx.lineTo(hx + 11, hy - 10);
+      ctx.closePath();
+      ctx.fillStyle = '#ffb6c1'; ctx.fill();
+
+      // -- TOPKNOT (fluffy forelock) --
+      ctx.beginPath(); ctx.arc(hx - 3, hy - 10, 5.5, Math.PI, 0);
+      ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 0.8; ctx.stroke();
+      ctx.beginPath(); ctx.arc(hx + 4, hy - 11, 4.5, Math.PI, 0);
       ctx.fillStyle = '#fff'; ctx.fill();
 
-      // --- NOSTRIL ---
-      ctx.beginPath();
-      ctx.ellipse(hx + 15, hy + 9, 2, 1.5, 0.3, 0, Math.PI * 2);
-      ctx.fillStyle = '#999'; ctx.fill();
+      // -- EYE (full detail) --
+      // Sclera
+      ctx.beginPath(); ctx.ellipse(hx + 6, hy - 2, 4.2, 3.5, 0.1, 0, Math.PI*2);
+      ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 0.8; ctx.stroke();
+      // Iris (warm amber)
+      ctx.beginPath(); ctx.ellipse(hx + 7, hy - 2, 2.9, 2.9, 0, 0, Math.PI*2);
+      ctx.fillStyle = '#7b4a1e'; ctx.fill();
+      // Pupil (slightly oval, very animal-like)
+      ctx.beginPath(); ctx.ellipse(hx + 7.2, hy - 1.8, 1.5, 1.9, 0.1, 0, Math.PI*2);
+      ctx.fillStyle = '#111'; ctx.fill();
+      // Catchlight
+      ctx.beginPath(); ctx.arc(hx + 8.2, hy - 3.2, 1, 0, Math.PI*2);
+      ctx.fillStyle = '#fff'; ctx.fill();
+      // Eyelashes
+      ctx.strokeStyle = '#333'; ctx.lineWidth = 0.9; ctx.lineCap = 'round';
+      [[-2, -1.5, -2.5, -3.8], [0.5, -1.5, 0.5, -3], [2.8, -0.8, 4, -2.5]].forEach(([x1,y1,x2,y2]) => {
+        ctx.beginPath();
+        ctx.moveTo(hx + 6 + x1, hy - 2 + y1 - 1.8);
+        ctx.lineTo(hx + 6 + x2, hy - 2 + y2 - 1.8);
+        ctx.stroke();
+      });
 
-      // --- MOUTH (hint of a smile) ---
-      ctx.beginPath();
-      ctx.moveTo(hx + 8, hy + 13);
-      ctx.quadraticCurveTo(hx + 11, hy + 15, hx + 10, hy + 13);
-      ctx.strokeStyle = '#888'; ctx.lineWidth = 1; ctx.stroke();
-
-      // --- CATCH FLASH ---
+      // -- CATCH FLASH --
       if (llamaFlash.active) {
         ctx.fillStyle = llamaFlash.color + '44';
-        ctx.beginPath(); ctx.roundRect(cx - 32, cy - 92, 64, 92, 10); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(cx - 36, cy - 98, 72, 98, 10); ctx.fill();
       }
 
       ctx.restore();
