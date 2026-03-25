@@ -44,6 +44,11 @@
     const ctx = canvas.getContext('2d');
     const playAgainBtn = document.getElementById('playAgainBtn');
 
+    // Preload school badge (used on end screen)
+    const schoolBadge = new Image();
+    schoolBadge.crossOrigin = 'anonymous';
+    schoolBadge.src = 'https://www.gatehouseschool.co.uk/wp-content/themes/schoolcms/images/logo.png';
+
     // ===== GAME CONFIG (scores, speeds, timer) =====
     const CONFIG = {
       timer: 60,
@@ -730,55 +735,65 @@
     function drawEndScreen() {
       // Gatehouse School colours: red #b00802, dark grey #3e3d3d, white #ffffff
 
-      // Dark grey overlay
-      ctx.fillStyle = 'rgba(62, 61, 61, 0.93)';
+      // Solid dark grey background
+      ctx.fillStyle = '#3e3d3d';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // School badge watermark — centred, large, very faint
+      if (schoolBadge.complete && schoolBadge.naturalWidth > 0) {
+        const badgeH = 320;
+        const badgeW = (schoolBadge.naturalWidth / schoolBadge.naturalHeight) * badgeH;
+        ctx.save();
+        ctx.globalAlpha = 0.07;
+        ctx.drawImage(schoolBadge, (canvas.width - badgeW) / 2, (canvas.height - badgeH) / 2, badgeW, badgeH);
+        ctx.restore();
+      }
+
+      // School red header bar
+      ctx.fillStyle = '#b00802';
+      ctx.fillRect(0, 0, canvas.width, 56);
+
       ctx.textAlign = 'center';
+
+      // Header text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillText('Gatehouse School — Science Week 2026', canvas.width / 2, 36);
 
       // Win message
       textShadow(
         CONFIG.winMessage,
-        canvas.width / 2, 160,
-        'bold 38px sans-serif',
-        '#FFFFFF', '#3e3d3d', 4
+        canvas.width / 2, 130,
+        'bold 36px sans-serif',
+        '#FFFFFF', '#000', 4
       );
 
-      // Final score
-      const scoreColor = score < 0 ? '#b00802' : '#FFD700';
+      // Final score — white for positive, school red for negative
+      const scoreColor = score < 0 ? '#b00802' : '#FFFFFF';
       textShadow(
         score.toString(),
-        canvas.width / 2, 260,
-        'bold 96px sans-serif',
-        scoreColor, '#000', 8
+        canvas.width / 2, 250,
+        'bold 100px sans-serif',
+        scoreColor, '#000', 6
       );
-      textShadow(
-        'points',
-        canvas.width / 2, 300,
-        '24px sans-serif',
-        '#FFFFFF'
-      );
+      ctx.fillStyle = '#cccccc';
+      ctx.font = '22px sans-serif';
+      ctx.fillText('points', canvas.width / 2, 282);
 
       // School red divider
       ctx.strokeStyle = '#b00802';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(60, 330);
-      ctx.lineTo(canvas.width - 60, 330);
+      ctx.moveTo(60, 308);
+      ctx.lineTo(canvas.width - 60, 308);
       ctx.stroke();
 
-      // Credits header in school red
+      // "Made by" line in school red
       textShadow(
         'Made by Year 4, Gatehouse School',
-        canvas.width / 2, 362,
-        'bold 18px sans-serif',
-        '#b00802', '#000', 3
-      );
-      textShadow(
-        'Science Week 2026',
-        canvas.width / 2, 386,
-        'bold 16px sans-serif',
-        '#b00802', '#000', 3
+        canvas.width / 2, 340,
+        'bold 17px sans-serif',
+        '#b00802', '#000', 2
       );
 
       // Class contributions in white
@@ -790,9 +805,9 @@
       classLines.forEach((line, i) => {
         textShadow(
           line,
-          canvas.width / 2, 416 + i * 24,
+          canvas.width / 2, 370 + i * 24,
           '15px sans-serif',
-          '#FFFFFF', '#000', 2
+          '#ffffff', '#000', 2
         );
       });
     }
