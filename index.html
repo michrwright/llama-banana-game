@@ -438,7 +438,9 @@
       skyColor: '#87CEEB',
       sandColor: '#F5DEB3',
       elements: [
-        { type: 'sun', x: 240, y: 90, size: 55 }
+        { type: 'sun', x: 240, y: 90, size: 55 },
+        { type: 'palmTree', x: 55,  lean:  1 },
+        { type: 'palmTree', x: 425, lean: -1 },
       ]
       // To add elements, push objects like:
       // { type: 'sun', x: 380, y: 80, color: '#FFD700', size: 40 }
@@ -557,29 +559,96 @@
     }
 
     function drawPalmTree(el) {
-      const { x, color = '#8B6914' } = el;
+      const { x, lean = 1 } = el;  // lean: 1 = right, -1 = left
       const baseY = canvas.height * 0.6;
+      const trunkH = 155;
+      const topX = x + lean * 28;
+      const topY = baseY - trunkH;
       ctx.save();
-      // Trunk
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 8;
+
+      // Trunk — tapered brown with texture rings
+      const trunkGrad = ctx.createLinearGradient(x - 7, 0, x + 7, 0);
+      trunkGrad.addColorStop(0, '#5a3510');
+      trunkGrad.addColorStop(0.4, '#8B5E1A');
+      trunkGrad.addColorStop(1, '#4a2c0c');
+      ctx.strokeStyle = trunkGrad;
+      ctx.lineWidth = 13;
+      ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.moveTo(x, baseY);
-      ctx.bezierCurveTo(x + 10, baseY - 40, x - 5, baseY - 80, x + 5, baseY - 110);
+      ctx.bezierCurveTo(x + lean * 8, baseY - 55, x + lean * 18, baseY - 100, topX, topY);
       ctx.stroke();
-      // Leaves
-      ctx.strokeStyle = '#2D8A2D';
-      ctx.lineWidth = 4;
-      const leafAngles = [-0.8, -0.3, 0.2, 0.7, 1.2];
-      leafAngles.forEach(angle => {
+      // Trunk texture rings
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+      ctx.lineWidth = 1.2;
+      for (let i = 1; i < 9; i++) {
+        const t = i / 9;
+        const rx = x + (topX - x) * t;
+        const ry = baseY + (topY - baseY) * t;
+        const hw = 5 + (1 - t) * 2;
         ctx.beginPath();
-        ctx.moveTo(x + 5, baseY - 110);
-        ctx.lineTo(
-          x + 5 + Math.cos(angle) * 50,
-          baseY - 110 + Math.sin(angle - 1.2) * 40
-        );
+        ctx.moveTo(rx - hw, ry - 2);
+        ctx.quadraticCurveTo(rx, ry + 2, rx + hw, ry - 2);
+        ctx.stroke();
+      }
+
+      // Fronds — big, droopy, deep green with midrib
+      const frondDefs = [
+        { angle: -1.45, len: 105, droop: 0.55 },  // hard left
+        { angle: -0.85, len: 115, droop: 0.45 },  // left
+        { angle: -0.25, len: 120, droop: 0.35 },  // slightly left
+        { angle:  0.25, len: 120, droop: 0.35 },  // slightly right
+        { angle:  0.85, len: 115, droop: 0.45 },  // right
+        { angle:  1.45, len: 105, droop: 0.55 },  // hard right
+        { angle: -1.8,  len:  80, droop: 0.65 },  // drooping left
+        { angle:  1.8,  len:  80, droop: 0.65 },  // drooping right
+      ];
+      frondDefs.forEach(({ angle, len, droop }) => {
+        const tipX = topX + Math.cos(angle - Math.PI/2) * len;
+        const tipY = topY + Math.sin(angle - Math.PI/2) * len + droop * len * 0.6;
+        const cpX  = topX + Math.cos(angle - Math.PI/2) * len * 0.55;
+        const cpY  = topY + Math.sin(angle - Math.PI/2) * len * 0.4 + droop * len * 0.35;
+
+        // Frond blade — filled leaf shape
+        const perpX = Math.cos(angle - Math.PI/2 + Math.PI/2);
+        const perpY = Math.sin(angle - Math.PI/2 + Math.PI/2);
+        const leafW = 11;
+        ctx.beginPath();
+        ctx.moveTo(topX, topY);
+        ctx.quadraticCurveTo(cpX + perpX * leafW, cpY + perpY * leafW, tipX, tipY);
+        ctx.quadraticCurveTo(cpX - perpX * leafW, cpY - perpY * leafW, topX, topY);
+        ctx.fillStyle = '#1a6b1a';
+        ctx.fill();
+        // Midrib highlight
+        ctx.beginPath();
+        ctx.moveTo(topX, topY);
+        ctx.quadraticCurveTo(cpX, cpY, tipX, tipY);
+        ctx.strokeStyle = '#2d9b2d';
+        ctx.lineWidth = 1.8;
+        ctx.lineCap = 'round';
         ctx.stroke();
       });
+
+      // Coconuts — three clustered just below frond base
+      const coconutPositions = [
+        { ox: -10, oy: 8 },
+        { ox:   4, oy: 12 },
+        { ox:  -2, oy: 20 },
+      ];
+      coconutPositions.forEach(({ ox, oy }) => {
+        const cx2 = topX + ox, cy2 = topY + oy;
+        const cg = ctx.createRadialGradient(cx2 - 3, cy2 - 3, 1, cx2, cy2, 9);
+        cg.addColorStop(0, '#a07040');
+        cg.addColorStop(0.6, '#6b4820');
+        cg.addColorStop(1, '#3d2408');
+        ctx.beginPath(); ctx.arc(cx2, cy2, 9, 0, Math.PI * 2);
+        ctx.fillStyle = cg; ctx.fill();
+        ctx.strokeStyle = '#2a1508'; ctx.lineWidth = 0.8; ctx.stroke();
+        // Highlight
+        ctx.beginPath(); ctx.arc(cx2 - 3, cy2 - 3, 3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,200,120,0.25)'; ctx.fill();
+      });
+
       ctx.restore();
     }
 
@@ -1170,7 +1239,8 @@
         llamaConfig.name              = 'Dolly';
         backgroundConfig.elements     = [
           { type: 'sun',      x: 380, y: 80,  color: '#FFD700', size: 40 },
-          { type: 'palmTree', x: 60 },
+          { type: 'palmTree', x: 60,  lean:  1 },
+          { type: 'palmTree', x: 420, lean: -1 },
           { type: 'waves',    color: '#5BA4CF' },
         ];
         CONFIG.credits.class1 = 'Look & feel: Class 1';
