@@ -1050,6 +1050,7 @@
     let spawnTimer = 0;
     const SPAWN_INTERVAL_MIN = 50, SPAWN_INTERVAL_MAX = 90;
     let nextSpawn = 70;
+    let bananasPerSpawn = 1;  // Class 2 can increase this
     const keys = { left: false, right: false };
 
     const llama = {
@@ -1088,7 +1089,10 @@
       // Spawn bananas
       spawnTimer++;
       if (spawnTimer >= nextSpawn) {
-        if (bananas.length < 6) bananas.push(spawnBanana());
+        const maxBananas = 6 + (bananasPerSpawn - 1) * 3;
+        if (bananas.length < maxBananas) {
+          for (let i = 0; i < bananasPerSpawn; i++) bananas.push(spawnBanana());
+        }
         spawnTimer = 0;
         nextSpawn = SPAWN_INTERVAL_MIN + Math.random() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
       }
@@ -1442,6 +1446,7 @@
       bananaConfig.goldActive    = false;
       bananaConfig.rottenActive  = false;
       bananaConfig.unicornActive = false;
+      bananasPerSpawn            = 1;
       CONFIG.gameTitle          = 'Llama Game';
       CONFIG.winMessage         = 'Game over!';
       CONFIG.credits.class1     = '';
