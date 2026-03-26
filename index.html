@@ -935,10 +935,97 @@
       } catch (e) { /* silent fail */ }
     }
 
+    function playCheerSound() {
+      try {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const dur = 2.0;
+
+        // Crowd noise: filtered white noise with rising bandpass sweep
+        const sz = Math.ceil(audioCtx.sampleRate * dur);
+        const buf = audioCtx.createBuffer(1, sz, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < sz; i++) d[i] = Math.random() * 2 - 1;
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buf;
+
+        const bp = audioCtx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.setValueAtTime(300, t);
+        bp.frequency.linearRampToValueAtTime(900, t + 0.3);   // surge up
+        bp.frequency.linearRampToValueAtTime(600, t + dur);   // settle
+        bp.Q.value = 1.2;
+
+        // Multiple detuned oscillators = "many voices" harmonic shimmer
+        const voices = [180, 270, 360, 450, 540];
+        voices.forEach((freq, i) => {
+          const osc = audioCtx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq * (1 + i * 0.012), t);
+          osc.frequency.linearRampToValueAtTime(freq * 1.18, t + 0.25);
+          osc.frequency.linearRampToValueAtTime(freq * 1.08, t + dur);
+          const og = audioCtx.createGain();
+          og.gain.setValueAtTime(0.001, t);
+          og.gain.linearRampToValueAtTime(0.07, t + 0.15);
+          og.gain.exponentialRampToValueAtTime(0.001, t + dur);
+          osc.connect(og); og.connect(master);
+          osc.start(t); osc.stop(t + dur);
+        });
+
+        // Envelope on crowd noise
+        const env = audioCtx.createGain();
+        env.gain.setValueAtTime(0.001, t);
+        env.gain.linearRampToValueAtTime(0.7, t + 0.12);   // fast surge
+        env.gain.linearRampToValueAtTime(0.5, t + 0.4);    // settle
+        env.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+        const master = audioCtx.createGain();
+        master.gain.value = 1.0;
+        master.connect(audioCtx.destination);
+
+        noise.connect(bp); bp.connect(env); env.connect(master);
+        noise.start(t); noise.stop(t + dur);
+      } catch(e) { /* silent fail */ }
+    }
+
+    function playYeahSound() {
+      try {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const dur = 0.28;
+
+        // "Yeah" = quick upward vowel sweep with vocal formant character
+        const osc = audioCtx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220, t);
+        osc.frequency.linearRampToValueAtTime(310, t + 0.08);   // "ye" rise
+        osc.frequency.linearRampToValueAtTime(240, t + dur);    // "ah" fall
+
+        // Formant filter — makes it sound vocal not just tonal
+        const formant = audioCtx.createBiquadFilter();
+        formant.type = 'peaking';
+        formant.frequency.setValueAtTime(800, t);
+        formant.frequency.linearRampToValueAtTime(1100, t + 0.08);
+        formant.frequency.linearRampToValueAtTime(700, t + dur);
+        formant.gain.value = 14;
+        formant.Q.value = 3;
+
+        const env = audioCtx.createGain();
+        env.gain.setValueAtTime(0.001, t);
+        env.gain.linearRampToValueAtTime(0.55, t + 0.03);
+        env.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+        osc.connect(formant); formant.connect(env); env.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + dur);
+      } catch(e) { /* silent fail */ }
+    }
+
     function playSound(type) {
       try {
         if (!audioCtx) return;
-        if (type === 'rotten' && rottenSoundIsFart) { playFartSound(); return; }
+        if (type === 'rotten'  && rottenSoundIsFart) { playFartSound();  return; }
+        if (type === 'gold')                          { playCheerSound(); return; }
+        if (type === 'regular')                       { playYeahSound();  return; }
         const cfg = soundConfig[type];
         if (!cfg) return;
         const osc = audioCtx.createOscillator();
