@@ -914,99 +914,179 @@
       } catch (e) { /* silent fail */ }
     }
 
-    function playCheerSound() {
+    // ===== SOUND LIBRARY =====
+    // Six named sounds. Each produced by the exact prompt shown below.
+    // soundAssignment maps banana types to sound names.
+    // Class 2 picks which sound goes on which banana during Beat 5.
+
+    // Prompt: "A quick four-note ascending chime, each note brighter and
+    // higher than the last, clean and punchy, like completing a level in
+    // a video game. Short attack, fast decay on each note."
+    function sound_levelUp() {
       try {
         if (!audioCtx) return;
         const t = audioCtx.currentTime;
         const master = audioCtx.createGain();
-        master.gain.value = 0.8;
+        master.gain.value = 0.7;
         master.connect(audioCtx.destination);
-
-        // Ascending fanfare — 4 notes played in quick sequence
-        const notes = [
-          { freq: 392, start: 0,    dur: 0.15 },  // G
-          { freq: 494, start: 0.1,  dur: 0.15 },  // B
-          { freq: 587, start: 0.2,  dur: 0.15 },  // D
-          { freq: 784, start: 0.3,  dur: 0.5  },  // G (octave up — the "ta-daaa")
-        ];
-        notes.forEach(({ freq, start, dur }) => {
+        [523, 659, 784, 1047].forEach((freq, i) => {
           const osc = audioCtx.createOscillator();
           osc.type = 'triangle';
           osc.frequency.value = freq;
           const g = audioCtx.createGain();
-          g.gain.setValueAtTime(0.001, t + start);
-          g.gain.linearRampToValueAtTime(0.5, t + start + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.001, t + start + dur);
+          const s = t + i * 0.09;
+          g.gain.setValueAtTime(0.001, s);
+          g.gain.linearRampToValueAtTime(0.6, s + 0.015);
+          g.gain.exponentialRampToValueAtTime(0.001, s + 0.18);
           osc.connect(g); g.connect(master);
-          osc.start(t + start); osc.stop(t + start + dur + 0.05);
+          osc.start(s); osc.stop(s + 0.2);
         });
-
-        // Harmony underneath
-        [196, 294, 392].forEach((freq, i) => {
-          const osc = audioCtx.createOscillator();
-          osc.type = 'sine';
-          osc.frequency.value = freq;
-          const g = audioCtx.createGain();
-          g.gain.setValueAtTime(0.001, t + 0.28);
-          g.gain.linearRampToValueAtTime(0.15, t + 0.35);
-          g.gain.exponentialRampToValueAtTime(0.001, t + 0.85);
-          osc.connect(g); g.connect(master);
-          osc.start(t + 0.28); osc.stop(t + 0.9);
-        });
-      } catch(e) { /* silent fail */ }
+      } catch(e) {}
     }
 
-    function playYeahSound() {
+    // Prompt: "A cartoon boing — the pitch starts low, shoots up fast,
+    // then springs back down slowly. Bouncy and silly, like a spring
+    // being stretched and released."
+    function sound_boing() {
       try {
         if (!audioCtx) return;
         const t = audioCtx.currentTime;
-        const dur = 0.28;
-
-        // "Yeah" = quick upward vowel sweep with vocal formant character
         const osc = audioCtx.createOscillator();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(220, t);
-        osc.frequency.linearRampToValueAtTime(310, t + 0.08);   // "ye" rise
-        osc.frequency.linearRampToValueAtTime(240, t + dur);    // "ah" fall
-
-        // Formant filter — makes it sound vocal not just tonal
-        const formant = audioCtx.createBiquadFilter();
-        formant.type = 'peaking';
-        formant.frequency.setValueAtTime(800, t);
-        formant.frequency.linearRampToValueAtTime(1100, t + 0.08);
-        formant.frequency.linearRampToValueAtTime(700, t + dur);
-        formant.gain.value = 14;
-        formant.Q.value = 3;
-
-        const env = audioCtx.createGain();
-        env.gain.setValueAtTime(0.001, t);
-        env.gain.linearRampToValueAtTime(0.55, t + 0.03);
-        env.gain.exponentialRampToValueAtTime(0.001, t + dur);
-
-        osc.connect(formant); formant.connect(env); env.connect(audioCtx.destination);
-        osc.start(t); osc.stop(t + dur);
-      } catch(e) { /* silent fail */ }
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, t);
+        osc.frequency.exponentialRampToValueAtTime(700, t + 0.08);
+        osc.frequency.exponentialRampToValueAtTime(280, t + 0.45);
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(0.001, t);
+        g.gain.linearRampToValueAtTime(0.7, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.5);
+      } catch(e) {}
     }
+
+    // Prompt: "Three soft descending bell notes, high and delicate, with
+    // a gentle shimmer that fades slowly. Light and magical, like a fairy
+    // chime. Each note slightly lower than the last."
+    function sound_magicChime() {
+      try {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const master = audioCtx.createGain();
+        master.gain.value = 0.6;
+        master.connect(audioCtx.destination);
+        [1568, 1175, 987].forEach((freq, i) => {
+          const osc = audioCtx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          const lfo = audioCtx.createOscillator();
+          lfo.frequency.value = 5;
+          const lfoG = audioCtx.createGain();
+          lfoG.gain.value = 4;
+          lfo.connect(lfoG); lfoG.connect(osc.frequency);
+          const g = audioCtx.createGain();
+          const s = t + i * 0.18;
+          g.gain.setValueAtTime(0.001, s);
+          g.gain.linearRampToValueAtTime(0.5, s + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, s + 0.7);
+          osc.connect(g); g.connect(master);
+          osc.start(s); osc.stop(s + 0.75);
+          lfo.start(s); lfo.stop(s + 0.75);
+        });
+      } catch(e) {}
+    }
+
+    // Prompt: "A flat harsh buzzer, like a wrong answer on a game show.
+    // Short and sharp, about a third of a second. No pitch change at all,
+    // just one aggressive flat buzz with a square wave."
+    function sound_buzzer() {
+      try {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.value = 160;
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(0.5, t);
+        g.gain.setValueAtTime(0.5, t + 0.25);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.35);
+      } catch(e) {}
+    }
+
+    // Prompt: "Two descending notes, low and mournful, like a disappointed
+    // brass instrument going wah-wah. Each note starts medium pitch and
+    // slides down. Slow, slightly buzzy, like a trombone."
+    function sound_sadTrombone() {
+      try {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const master = audioCtx.createGain();
+        master.gain.value = 0.6;
+        master.connect(audioCtx.destination);
+        [{ freq: 311, start: 0 }, { freq: 220, start: 0.35 }].forEach(({ freq, start }) => {
+          const osc = audioCtx.createOscillator();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, t + start);
+          osc.frequency.linearRampToValueAtTime(freq * 0.7, t + start + 0.3);
+          const g = audioCtx.createGain();
+          g.gain.setValueAtTime(0.001, t + start);
+          g.gain.linearRampToValueAtTime(0.5, t + start + 0.04);
+          g.gain.exponentialRampToValueAtTime(0.001, t + start + 0.32);
+          osc.connect(g); g.connect(master);
+          osc.start(t + start); osc.stop(t + start + 0.35);
+        });
+      } catch(e) {}
+    }
+
+    // Prompt: "A short sharp splat — a brief burst of noise, like a soft
+    // wet object hitting the floor hard. Very short, instant cut-off,
+    // no sustain at all. Low and thuddy."
+    function sound_splat() {
+      try {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const sz = Math.ceil(audioCtx.sampleRate * 0.12);
+        const buf = audioCtx.createBuffer(1, sz, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < sz; i++) d[i] = Math.random() * 2 - 1;
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        const bp = audioCtx.createBiquadFilter();
+        bp.type = 'bandpass'; bp.frequency.value = 350; bp.Q.value = 0.8;
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(0.8, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        src.connect(bp); bp.connect(g); g.connect(audioCtx.destination);
+        src.start(t); src.stop(t + 0.13);
+      } catch(e) {}
+    }
+
+    // Sound assignments — which library sound plays for each banana type
+    // Defaults; Class 2 picks during Beat 5
+    const soundAssignment = {
+      regular: 'boing',
+      special: 'levelUp',
+      bad:     'fart',
+    };
+
+    const soundLibrary = {
+      fart:        playFartSound,
+      levelUp:     sound_levelUp,
+      boing:       sound_boing,
+      magicChime:  sound_magicChime,
+      buzzer:      sound_buzzer,
+      sadTrombone: sound_sadTrombone,
+      splat:       sound_splat,
+    };
 
     function playSound(type) {
       try {
         if (!audioCtx) return;
-        if (type === 'bad'     && rottenSoundIsFart) { playFartSound();  return; }
-        if (type === 'special')                       { playCheerSound(); return; }
-        if (type === 'regular')                       { playYeahSound();  return; }
-        const cfg = soundConfig[type];
-        if (!cfg) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.type = cfg.type;
-        osc.frequency.setValueAtTime(cfg.frequency, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + cfg.duration);
-        osc.start(audioCtx.currentTime);
-        osc.stop(audioCtx.currentTime + cfg.duration);
-      } catch (e) { /* silent fail */ }
+        const fn = soundLibrary[soundAssignment[type]];
+        if (fn) fn();
+      } catch(e) {}
     }
 
     // ===== GAME LOGIC (movement, collision, timer, speed ramp) =====
