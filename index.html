@@ -1473,6 +1473,17 @@
     }, { passive: false });
 
     // ===== KEYBOARD INPUT =====
+    // Sound demo keys: press 1-6 any time to preview each sound (for Beat 5 teaching moment)
+    const soundDemoKeys = {
+      '1': 'levelUp',
+      '2': 'boing',
+      '3': 'magicChime',
+      '4': 'buzzer',
+      '5': 'sadTrombone',
+      '6': 'splat',
+      '7': 'fart',
+    };
+
     window.addEventListener('keydown', e => {
       if (e.key === 'ArrowLeft')  { e.preventDefault(); keys.left  = true; }
       if (e.key === 'ArrowRight') { e.preventDefault(); keys.right = true; }
@@ -1481,6 +1492,12 @@
         initAudio();
         if (gameState === 'not-started') startGame();
         else if (gameState === 'ended')  resetGame();
+      }
+      // Sound preview keys (1–7)
+      if (soundDemoKeys[e.key]) {
+        initAudio();
+        const fn = soundLibrary[soundDemoKeys[e.key]];
+        if (fn) fn();
       }
     });
 
