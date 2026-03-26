@@ -845,9 +845,65 @@
       } catch (e) { /* audio unavailable */ }
     }
 
+    // Flag: when true, rotten banana plays fart sound instead of normal sound
+    let rottenSoundIsFart = true;
+
+    function playFartSound() {
+      try {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const duration = 0.55;
+
+        // Noise source for the "brrp" texture
+        const bufferSize = audioCtx.sampleRate * duration;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+
+        // Low bandpass to make it rumble, not hiss
+        const bandpass = audioCtx.createBiquadFilter();
+        bandpass.type = 'bandpass';
+        bandpass.frequency.setValueAtTime(120, t);
+        bandpass.frequency.exponentialRampToValueAtTime(55, t + duration);
+        bandpass.Q.value = 1.2;
+
+        // Low oscillator for the tonal "pfft" body
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(95, t);
+        osc.frequency.exponentialRampToValueAtTime(42, t + duration);
+
+        // LFO for the burbling wobble
+        const lfo = audioCtx.createOscillator();
+        lfo.frequency.value = 18;
+        const lfoGain = audioCtx.createGain();
+        lfoGain.gain.value = 25;
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+
+        // Mix noise + osc together
+        const masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.55, t);
+        masterGain.gain.setValueAtTime(0.55, t + 0.05);
+        masterGain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+
+        noise.connect(bandpass);
+        bandpass.connect(masterGain);
+        osc.connect(masterGain);
+        masterGain.connect(audioCtx.destination);
+
+        noise.start(t); noise.stop(t + duration);
+        osc.start(t);   osc.stop(t + duration);
+        lfo.start(t);   lfo.stop(t + duration);
+      } catch (e) { /* silent fail */ }
+    }
+
     function playSound(type) {
       try {
         if (!audioCtx) return;
+        if (type === 'rotten' && rottenSoundIsFart) { playFartSound(); return; }
         const cfg = soundConfig[type];
         if (!cfg) return;
         const osc = audioCtx.createOscillator();
