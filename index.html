@@ -685,7 +685,7 @@
       gold:    { color: '#FFD700', glowColor: '#FFF4A3', size: 28, label: 'gold banana' },
       rotten:  { color: '#5C4033', size: 24, label: CONFIG.rottenName },
       unicorn: { color: '#FF9EE0', glowColor: '#E8BBFF', size: 30, label: 'unicorn banana' },
-      goldActive: false,
+      goldActive: true,
       rottenActive: true,
       unicornActive: true,
     };
@@ -1025,7 +1025,7 @@
       try {
         if (!audioCtx) return;
         if (type === 'rotten'  && rottenSoundIsFart) { playFartSound();  return; }
-        if (type === 'gold')                          { playCheerSound(); return; }
+        if (type === 'gold'   || type === 'unicorn')  { playCheerSound(); return; }
         if (type === 'regular')                       { playYeahSound();  return; }
         const cfg = soundConfig[type];
         if (!cfg) return;
