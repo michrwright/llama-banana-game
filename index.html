@@ -1330,14 +1330,28 @@
     }
 
     function drawEndScreen() {
-      // End screen colours: red #b00802, dark grey #3e3d3d, white #ffffff
-
-      // Solid dark grey background
-      ctx.fillStyle = '#3e3d3d';
+      // Deep purple → dark navy gradient background
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bgGrad.addColorStop(0, '#1a0533');
+      bgGrad.addColorStop(1, '#0d1b4b');
+      ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // School red header bar
-      ctx.fillStyle = '#b00802';
+      // Scattered stars
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      const stars = [[42,80],[90,160],[380,95],[410,200],[55,300],[395,330],[200,420],[130,390],[320,60],[260,180]];
+      stars.forEach(([x, y]) => {
+        ctx.beginPath();
+        ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Hot pink header bar
+      const hdrGrad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      hdrGrad.addColorStop(0, '#c2006e');
+      hdrGrad.addColorStop(0.5, '#ff2d78');
+      hdrGrad.addColorStop(1, '#c2006e');
+      ctx.fillStyle = hdrGrad;
       ctx.fillRect(0, 0, canvas.width, 56);
 
       ctx.textAlign = 'center';
@@ -1350,40 +1364,46 @@
       // Win message
       textShadow(
         CONFIG.winMessage,
-        canvas.width / 2, 130,
-        'bold 36px sans-serif',
-        '#FFFFFF', '#000', 4
+        canvas.width / 2, 120,
+        'bold 34px sans-serif',
+        '#ffffff', '#4a006e', 4
       );
 
-      // Final score — white for positive, school red for negative
-      const scoreColor = score < 0 ? '#b00802' : '#FFFFFF';
+      // Final score — gold for positive, coral for negative
+      const scoreColor = score < 0 ? '#ff6b35' : '#FFD700';
+      const scoreShadow = score < 0 ? '#7a2200' : '#b05a00';
       textShadow(
         score.toString(),
-        canvas.width / 2, 250,
+        canvas.width / 2, 240,
         'bold 100px sans-serif',
-        scoreColor, '#000', 6
+        scoreColor, scoreShadow, 6
       );
-      ctx.fillStyle = '#cccccc';
-      ctx.font = '22px sans-serif';
-      ctx.fillText('points', canvas.width / 2, 282);
+      ctx.fillStyle = '#a78bfa';
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillText('points', canvas.width / 2, 272);
 
-      // School red divider
-      ctx.strokeStyle = '#b00802';
+      // Gold gradient divider
+      const divGrad = ctx.createLinearGradient(60, 0, canvas.width - 60, 0);
+      divGrad.addColorStop(0, 'transparent');
+      divGrad.addColorStop(0.3, '#FFD700');
+      divGrad.addColorStop(0.7, '#FFD700');
+      divGrad.addColorStop(1, 'transparent');
+      ctx.strokeStyle = divGrad;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(60, 308);
-      ctx.lineTo(canvas.width - 60, 308);
+      ctx.moveTo(60, 298);
+      ctx.lineTo(canvas.width - 60, 298);
       ctx.stroke();
 
-      // "Made by" line in school red
+      // "Made by" line in hot pink
       textShadow(
         'An idea by Joshua, built by Year 4',
-        canvas.width / 2, 340,
-        'bold 17px sans-serif',
-        '#b00802', '#000', 2
+        canvas.width / 2, 328,
+        'bold 16px sans-serif',
+        '#ff2d78', '#4a006e', 2
       );
 
-      // Class contributions in white
+      // Class contributions in sky blue
       const classLines = [];
       if (CONFIG.credits.class1) classLines.push(CONFIG.credits.class1);
       if (CONFIG.credits.class2) classLines.push(CONFIG.credits.class2);
@@ -1392,9 +1412,9 @@
       classLines.forEach((line, i) => {
         textShadow(
           line,
-          canvas.width / 2, 370 + i * 24,
-          '15px sans-serif',
-          '#ffffff', '#000', 2
+          canvas.width / 2, 358 + i * 24,
+          '14px sans-serif',
+          '#7dd3fc', '#00205a', 2
         );
       });
     }
