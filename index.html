@@ -49,12 +49,12 @@
     const CONFIG = {
       timer: 60,
       speed: { slow: 2, medium: 3.5, fast: 5.5 },
-      score: { gold: 10, regular: 5, rotten: -20, unicorn: 10 },
-      banana: { goldChance: 0.15, rottenChance: 0.2 },
+      score: { special: 10, regular: 5, bad: -20 },
+      banana: { rottenChance: 0.2 },
       llama: { name: 'J-Lam', speed: 5 },
       gameTitle: 'Llama Game',
       winMessage: 'Game over!',
-      rottenName: 'Rotten banana',
+      badName: 'Bad banana',
       credits: { class1: '', class2: '', class3: '' }
     };
 
@@ -682,28 +682,19 @@
     // ===== BANANA TYPES (appearance, frequency, scoring) =====
     const bananaConfig = {
       regular: { color: '#FFE135', size: 24, label: 'banana' },
-      gold:    { color: '#FFD700', glowColor: '#FFF4A3', size: 28, label: 'gold banana' },
-      rotten:  { color: '#5C4033', size: 24, label: CONFIG.rottenName },
-      unicorn: { color: '#FF9EE0', glowColor: '#E8BBFF', size: 30, label: 'unicorn banana' },
-      goldActive: true,
-      rottenActive: true,
-      unicornActive: true,
+      special: { color: '#FF9EE0', glowColor: '#E8BBFF', size: 30, label: 'special banana' },
+      bad:     { color: '#5C4033', size: 24, label: CONFIG.badName },
+      specialActive: true,
+      badActive: true,
     };
 
     function spawnBanana() {
-      const types = ['regular'];
-      if (bananaConfig.goldActive)   types.push('gold');
-      if (bananaConfig.rottenActive) types.push('rotten');
-      if (bananaConfig.unicornActive) types.push('unicorn');
-
       let type = 'regular';
       const r = Math.random();
-      if (bananaConfig.goldActive && r < CONFIG.banana.goldChance) {
-        type = 'gold';
-      } else if (bananaConfig.rottenActive && r < CONFIG.banana.goldChance + CONFIG.banana.rottenChance) {
-        type = 'rotten';
-      } else if (bananaConfig.unicornActive && r < CONFIG.banana.goldChance + CONFIG.banana.rottenChance + 0.1) {
-        type = 'unicorn';
+      if (bananaConfig.specialActive && r < 0.25) {
+        type = 'special';
+      } else if (bananaConfig.badActive && r < 0.25 + CONFIG.banana.rottenChance) {
+        type = 'bad';
       }
 
       const cfg = bananaConfig[type];
@@ -723,7 +714,7 @@
       const s = banana.width / 24; // scale factor
       ctx.save();
 
-      // Glow for gold
+      // Glow for special banana
       if (cfg.glowColor) {
         ctx.shadowColor = cfg.glowColor;
         ctx.shadowBlur = 14;
@@ -768,8 +759,8 @@
 
       ctx.shadowBlur = 0;
 
-      // --- Rotten: dark blotches ---
-      if (banana.type === 'rotten') {
+      // --- Bad: dark blotches ---
+      if (banana.type === 'bad') {
         ctx.fillStyle = 'rgba(40, 15, 5, 0.55)';
         [[-5 * s, 2 * s, 3.5 * s], [0, -4 * s, 2.5 * s], [-7 * s, 8 * s, 2 * s]].forEach(([dx, dy, r]) => {
           ctx.beginPath();
@@ -778,18 +769,8 @@
         });
       }
 
-      // --- Gold: sparkle dots ---
-      if (banana.type === 'gold') {
-        ctx.fillStyle = '#FFFDE0';
-        [[- 3 * s, -8 * s], [- 8 * s, 2 * s]].forEach(([dx, dy]) => {
-          ctx.beginPath();
-          ctx.arc(x + dx, y + dy, 2 * s, 0, Math.PI * 2);
-          ctx.fill();
-        });
-      }
-
-      // --- Unicorn: rainbow gradient body + sparkle stars ---
-      if (banana.type === 'unicorn') {
+      // --- Special: rainbow gradient body + sparkle stars ---
+      if (banana.type === 'special') {
         // Rainbow shimmer overlay
         const t = (Date.now() / 600) % 1;
         const rainbowColors = [
@@ -829,9 +810,7 @@
     // ===== SOUNDS (web audio, one function per banana type) =====
     const soundConfig = {
       regular: { type: 'sine',     frequency: 440, duration: 0.15 },
-      gold:    { type: 'sine',     frequency: 660, duration: 0.25 },
-      rotten:  { type: 'sawtooth', frequency: 180, duration: 0.2  },
-      unicorn: { type: 'sine',     frequency: 880, duration: 0.35 }
+      bad:     { type: 'sawtooth', frequency: 180, duration: 0.2  },
     };
 
     let audioCtx = null;
@@ -939,53 +918,41 @@
       try {
         if (!audioCtx) return;
         const t = audioCtx.currentTime;
-        const dur = 2.0;
-
-        // Master must be declared first — voices loop references it
         const master = audioCtx.createGain();
-        master.gain.value = 1.0;
+        master.gain.value = 0.8;
         master.connect(audioCtx.destination);
 
-        // Crowd noise: filtered white noise with rising bandpass sweep
-        const sz = Math.ceil(audioCtx.sampleRate * dur);
-        const buf = audioCtx.createBuffer(1, sz, audioCtx.sampleRate);
-        const d = buf.getChannelData(0);
-        for (let i = 0; i < sz; i++) d[i] = Math.random() * 2 - 1;
-        const noise = audioCtx.createBufferSource();
-        noise.buffer = buf;
-
-        const bp = audioCtx.createBiquadFilter();
-        bp.type = 'bandpass';
-        bp.frequency.setValueAtTime(300, t);
-        bp.frequency.linearRampToValueAtTime(900, t + 0.3);
-        bp.frequency.linearRampToValueAtTime(600, t + dur);
-        bp.Q.value = 1.2;
-
-        // Multiple detuned oscillators = "many voices" harmonic shimmer
-        const voices = [180, 270, 360, 450, 540];
-        voices.forEach((freq, i) => {
+        // Ascending fanfare — 4 notes played in quick sequence
+        const notes = [
+          { freq: 392, start: 0,    dur: 0.15 },  // G
+          { freq: 494, start: 0.1,  dur: 0.15 },  // B
+          { freq: 587, start: 0.2,  dur: 0.15 },  // D
+          { freq: 784, start: 0.3,  dur: 0.5  },  // G (octave up — the "ta-daaa")
+        ];
+        notes.forEach(({ freq, start, dur }) => {
           const osc = audioCtx.createOscillator();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq * (1 + i * 0.012), t);
-          osc.frequency.linearRampToValueAtTime(freq * 1.18, t + 0.25);
-          osc.frequency.linearRampToValueAtTime(freq * 1.08, t + dur);
-          const og = audioCtx.createGain();
-          og.gain.setValueAtTime(0.001, t);
-          og.gain.linearRampToValueAtTime(0.07, t + 0.15);
-          og.gain.exponentialRampToValueAtTime(0.001, t + dur);
-          osc.connect(og); og.connect(master);
-          osc.start(t); osc.stop(t + dur);
+          osc.type = 'triangle';
+          osc.frequency.value = freq;
+          const g = audioCtx.createGain();
+          g.gain.setValueAtTime(0.001, t + start);
+          g.gain.linearRampToValueAtTime(0.5, t + start + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, t + start + dur);
+          osc.connect(g); g.connect(master);
+          osc.start(t + start); osc.stop(t + start + dur + 0.05);
         });
 
-        // Envelope on crowd noise
-        const env = audioCtx.createGain();
-        env.gain.setValueAtTime(0.001, t);
-        env.gain.linearRampToValueAtTime(0.7, t + 0.12);
-        env.gain.linearRampToValueAtTime(0.5, t + 0.4);
-        env.gain.exponentialRampToValueAtTime(0.001, t + dur);
-
-        noise.connect(bp); bp.connect(env); env.connect(master);
-        noise.start(t); noise.stop(t + dur);
+        // Harmony underneath
+        [196, 294, 392].forEach((freq, i) => {
+          const osc = audioCtx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          const g = audioCtx.createGain();
+          g.gain.setValueAtTime(0.001, t + 0.28);
+          g.gain.linearRampToValueAtTime(0.15, t + 0.35);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.85);
+          osc.connect(g); g.connect(master);
+          osc.start(t + 0.28); osc.stop(t + 0.9);
+        });
       } catch(e) { /* silent fail */ }
     }
 
@@ -1024,8 +991,8 @@
     function playSound(type) {
       try {
         if (!audioCtx) return;
-        if (type === 'rotten'  && rottenSoundIsFart) { playFartSound();  return; }
-        if (type === 'gold'   || type === 'unicorn')  { playCheerSound(); return; }
+        if (type === 'bad'     && rottenSoundIsFart) { playFartSound();  return; }
+        if (type === 'special')                       { playCheerSound(); return; }
         if (type === 'regular')                       { playYeahSound();  return; }
         const cfg = soundConfig[type];
         if (!cfg) return;
@@ -1432,7 +1399,7 @@
     // ===== DEMO STATES (classroom presentation) =====
     // ?demo=0  boring start state
     // ?demo=1  after Class 1 (pyjamas, name, background)
-    // ?demo=2  after Class 2 (gold + rotten bananas, sounds)
+    // ?demo=2  after Class 2 (special + bad bananas, sounds)
     // ?demo=3  after Class 3 (title, win message, credits — finished)
     // No param = live game (whatever has actually been built)
     (function applyDemoState() {
@@ -1444,9 +1411,8 @@
       llamaConfig.name          = '';
       backgroundConfig.elements = [];
       backgroundConfig.skyColor = '#87CEEB';
-      bananaConfig.goldActive    = false;
-      bananaConfig.rottenActive  = false;
-      bananaConfig.unicornActive = false;
+      bananaConfig.specialActive = false;
+      bananaConfig.badActive     = false;
       bananasPerSpawn            = 1;
       CONFIG.gameTitle          = 'Llama Game';
       CONFIG.winMessage         = 'Game over!';
@@ -1473,10 +1439,10 @@
       }
 
       if (param >= '2') {
-        // Class 2: gold and rotten bananas active
-        bananaConfig.goldActive   = true;
-        bananaConfig.rottenActive = true;
-        CONFIG.credits.class2     = 'Game mechanics: Class 2';
+        // Class 2: special and bad bananas active
+        bananaConfig.specialActive = true;
+        bananaConfig.badActive     = true;
+        CONFIG.credits.class2      = 'Game mechanics: Class 2';
       }
 
       if (param >= '3') {
