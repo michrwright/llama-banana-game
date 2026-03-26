@@ -1059,7 +1059,11 @@
       if (spawnTimer >= nextSpawn) {
         const maxBananas = 6 + (bananasPerSpawn - 1) * 3;
         if (bananas.length < maxBananas) {
-          for (let i = 0; i < bananasPerSpawn; i++) bananas.push(spawnBanana());
+          for (let i = 0; i < bananasPerSpawn; i++) {
+            const b = spawnBanana();
+            b.y = -b.height - Math.random() * 120; // stagger entry up to 120px apart
+            bananas.push(b);
+          }
         }
         spawnTimer = 0;
         nextSpawn = SPAWN_INTERVAL_MIN + Math.random() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
