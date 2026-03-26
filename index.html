@@ -852,59 +852,86 @@
       try {
         if (!audioCtx) return;
         const t = audioCtx.currentTime;
-        const duration = 0.6;
+        // Randomise length + pitch slightly so each fart sounds different
+        const duration = 0.65 + Math.random() * 0.25;
+        const pitchShift = 0.85 + Math.random() * 0.3;
 
-        // === Layer 1: filtered noise (the "brrrp" body) ===
-        const bufferSize = audioCtx.sampleRate * duration;
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        const noise = audioCtx.createBufferSource();
-        noise.buffer = buffer;
+        // === Helper: make a white noise buffer ===
+        function makeNoise(dur) {
+          const sz = Math.ceil(audioCtx.sampleRate * dur);
+          const buf = audioCtx.createBuffer(1, sz, audioCtx.sampleRate);
+          const d = buf.getChannelData(0);
+          for (let i = 0; i < sz; i++) d[i] = Math.random() * 2 - 1;
+          const src = audioCtx.createBufferSource();
+          src.buffer = buf;
+          return src;
+        }
 
-        // Bandpass centred low — sweeps down as the fart "deflates"
-        const bp = audioCtx.createBiquadFilter();
-        bp.type = 'bandpass';
-        bp.frequency.setValueAtTime(180, t);
-        bp.frequency.exponentialRampToValueAtTime(60, t + duration);
-        bp.Q.value = 3.5;
+        // === Layer A: "Pff" attack burst — short high noise ===
+        const attack = makeNoise(0.06);
+        const attackBP = audioCtx.createBiquadFilter();
+        attackBP.type = 'bandpass';
+        attackBP.frequency.value = 600 * pitchShift;
+        attackBP.Q.value = 1.8;
+        const attackEnv = audioCtx.createGain();
+        attackEnv.gain.setValueAtTime(1.2, t);
+        attackEnv.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+        attack.connect(attackBP); attackBP.connect(attackEnv);
 
-        // === Layer 2: low sawtooth for the tonal buzz ===
-        const osc = audioCtx.createOscillator();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(110, t);
-        osc.frequency.exponentialRampToValueAtTime(48, t + duration);
+        // === Layer B: wet body noise — the "brrrrp" ===
+        const body = makeNoise(duration);
+        const bodyBP = audioCtx.createBiquadFilter();
+        bodyBP.type = 'bandpass';
+        bodyBP.frequency.setValueAtTime(220 * pitchShift, t);
+        bodyBP.frequency.exponentialRampToValueAtTime(65 * pitchShift, t + duration);
+        bodyBP.Q.value = 4.5;
+        const bodyEnv = audioCtx.createGain();
+        bodyEnv.gain.setValueAtTime(0.001, t);
+        bodyEnv.gain.linearRampToValueAtTime(1.1, t + 0.025);
+        bodyEnv.gain.exponentialRampToValueAtTime(0.001, t + duration);
+        body.connect(bodyBP); bodyBP.connect(bodyEnv);
 
-        // === Flutter LFO — modulates AMPLITUDE, not pitch ===
-        // This is what makes it sound like a real fart (the "brrr" stutter)
-        const flutter = audioCtx.createOscillator();
-        flutter.type = 'square';
-        flutter.frequency.setValueAtTime(38, t);
-        flutter.frequency.linearRampToValueAtTime(22, t + duration);
-        const flutterGain = audioCtx.createGain();
-        flutterGain.gain.value = 0.45;
-        flutter.connect(flutterGain);
+        // === Layer C: resonant sawtooth buzz ===
+        const buzz = audioCtx.createOscillator();
+        buzz.type = 'sawtooth';
+        buzz.frequency.setValueAtTime(130 * pitchShift, t);
+        buzz.frequency.exponentialRampToValueAtTime(45 * pitchShift, t + duration);
+        const buzzEnv = audioCtx.createGain();
+        buzzEnv.gain.setValueAtTime(0.001, t);
+        buzzEnv.gain.linearRampToValueAtTime(0.5, t + 0.03);
+        buzzEnv.gain.exponentialRampToValueAtTime(0.001, t + duration * 0.85);
+        buzz.connect(buzzEnv);
 
-        // === Envelope ===
-        const env = audioCtx.createGain();
-        env.gain.setValueAtTime(0.001, t);
-        env.gain.linearRampToValueAtTime(0.8, t + 0.02);   // sharp attack
-        env.gain.setValueAtTime(0.8, t + 0.04);
-        env.gain.exponentialRampToValueAtTime(0.001, t + duration);
+        // === Irregular flutter: TWO LFOs at slightly different rates ===
+        // Their interference creates an organic, non-mechanical stutter
+        function makeFlutterLFO(freq, amount) {
+          const lfo = audioCtx.createOscillator();
+          lfo.type = 'square';
+          lfo.frequency.setValueAtTime(freq, t);
+          lfo.frequency.linearRampToValueAtTime(freq * 0.55, t + duration);
+          const lg = audioCtx.createGain();
+          lg.gain.value = amount;
+          lfo.connect(lg);
+          lfo.start(t); lfo.stop(t + duration);
+          return lg;
+        }
+        const flutter1 = makeFlutterLFO(41, 0.38);
+        const flutter2 = makeFlutterLFO(33, 0.22);
+        flutter1.connect(bodyEnv.gain);
+        flutter2.connect(bodyEnv.gain);
+        flutter1.connect(buzzEnv.gain);
 
-        // === Wire it up ===
-        // noise → bandpass → env
-        // osc → env
-        // flutterGain modulates env gain
-        noise.connect(bp);
-        bp.connect(env);
-        osc.connect(env);
-        flutterGain.connect(env.gain);
-        env.connect(audioCtx.destination);
+        // === Master output ===
+        const master = audioCtx.createGain();
+        master.gain.value = 1.0;
+        attackEnv.connect(master);
+        bodyEnv.connect(master);
+        buzzEnv.connect(master);
+        master.connect(audioCtx.destination);
 
-        noise.start(t);   noise.stop(t + duration);
-        osc.start(t);     osc.stop(t + duration);
-        flutter.start(t); flutter.stop(t + duration);
+        attack.start(t); attack.stop(t + 0.08);
+        body.start(t);   body.stop(t + duration);
+        buzz.start(t);   buzz.stop(t + duration);
       } catch (e) { /* silent fail */ }
     }
 
