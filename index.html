@@ -686,6 +686,7 @@
       bad:     { color: '#5C4033', size: 24, label: CONFIG.badName },
       specialActive: true,
       badActive: true,
+      specialStyle: 'rainbow', // 'rainbow' or 'golden' — set during Class 2 Beat 3
     };
 
     function spawnBanana() {
@@ -769,39 +770,65 @@
         });
       }
 
-      // --- Special: rainbow gradient body + sparkle stars ---
+      // --- Special: rainbow or golden variant ---
       if (banana.type === 'special') {
-        // Rainbow shimmer overlay
-        const t = (Date.now() / 600) % 1;
-        const rainbowColors = [
-          `hsla(${Math.floor(t * 360)},100%,70%,0.55)`,
-          `hsla(${Math.floor((t + 0.33) * 360) % 360},100%,70%,0.55)`,
-          `hsla(${Math.floor((t + 0.66) * 360) % 360},100%,70%,0.55)`,
-        ];
-        ctx.beginPath();
-        ctx.moveTo(x - 10 * s, y + 14 * s);
-        ctx.bezierCurveTo(x - 18 * s, y - 2 * s, x - 8 * s, y - 18 * s, x + 4 * s, y - 16 * s);
-        ctx.bezierCurveTo(x - 2 * s, y - 10 * s, x - 10 * s, y + 2 * s, x - 2 * s, y + 14 * s);
-        ctx.closePath();
-        const rg = ctx.createLinearGradient(x - 18 * s, y - 18 * s, x + 4 * s, y + 14 * s);
-        rg.addColorStop(0,   rainbowColors[0]);
-        rg.addColorStop(0.5, rainbowColors[1]);
-        rg.addColorStop(1,   rainbowColors[2]);
-        ctx.fillStyle = rg;
-        ctx.fill();
-
-        // Sparkle stars around banana
-        ctx.fillStyle = '#fff';
-        [[-12*s, -10*s, 3.5*s], [6*s, -6*s, 2.5*s], [-4*s, 10*s, 2*s], [8*s, 4*s, 3*s]].forEach(([dx, dy, r]) => {
-          for (let p = 0; p < 8; p++) {
-            const a = (p / 8) * Math.PI * 2;
-            const pr = p % 2 === 0 ? r : r * 0.4;
-            p === 0
-              ? ctx.beginPath() || ctx.moveTo(x + dx + Math.cos(a) * pr, y + dy + Math.sin(a) * pr)
-              : ctx.lineTo(x + dx + Math.cos(a) * pr, y + dy + Math.sin(a) * pr);
-          }
-          ctx.closePath(); ctx.fill();
-        });
+        if (bananaConfig.specialStyle === 'golden') {
+          // Golden: radial gold sheen + 4 pointed star sparkles in warm white
+          const gg = ctx.createRadialGradient(x - 4*s, y - 4*s, 1*s, x, y, 16*s);
+          gg.addColorStop(0,   'rgba(255,255,180,0.75)');
+          gg.addColorStop(0.5, 'rgba(255,200,0,0.5)');
+          gg.addColorStop(1,   'rgba(180,100,0,0.2)');
+          ctx.beginPath();
+          ctx.moveTo(x - 10*s, y + 14*s);
+          ctx.bezierCurveTo(x - 18*s, y - 2*s, x - 8*s, y - 18*s, x + 4*s, y - 16*s);
+          ctx.bezierCurveTo(x - 2*s, y - 10*s, x - 10*s, y + 2*s, x - 2*s, y + 14*s);
+          ctx.closePath();
+          ctx.fillStyle = gg;
+          ctx.fill();
+          // Gold sparkle stars
+          ctx.fillStyle = 'rgba(255,240,100,0.95)';
+          [[-13*s, -8*s, 4*s], [7*s, -5*s, 3*s], [-3*s, 11*s, 2.5*s], [9*s, 5*s, 3.5*s]].forEach(([dx, dy, r]) => {
+            for (let p = 0; p < 8; p++) {
+              const a = (p / 8) * Math.PI * 2;
+              const pr = p % 2 === 0 ? r : r * 0.35;
+              p === 0
+                ? ctx.beginPath() || ctx.moveTo(x + dx + Math.cos(a) * pr, y + dy + Math.sin(a) * pr)
+                : ctx.lineTo(x + dx + Math.cos(a) * pr, y + dy + Math.sin(a) * pr);
+            }
+            ctx.closePath(); ctx.fill();
+          });
+        } else {
+          // Rainbow: animated shifting shimmer + white sparkle stars
+          const t = (Date.now() / 600) % 1;
+          const rainbowColors = [
+            `hsla(${Math.floor(t * 360)},100%,70%,0.55)`,
+            `hsla(${Math.floor((t + 0.33) * 360) % 360},100%,70%,0.55)`,
+            `hsla(${Math.floor((t + 0.66) * 360) % 360},100%,70%,0.55)`,
+          ];
+          ctx.beginPath();
+          ctx.moveTo(x - 10*s, y + 14*s);
+          ctx.bezierCurveTo(x - 18*s, y - 2*s, x - 8*s, y - 18*s, x + 4*s, y - 16*s);
+          ctx.bezierCurveTo(x - 2*s, y - 10*s, x - 10*s, y + 2*s, x - 2*s, y + 14*s);
+          ctx.closePath();
+          const rg = ctx.createLinearGradient(x - 18*s, y - 18*s, x + 4*s, y + 14*s);
+          rg.addColorStop(0,   rainbowColors[0]);
+          rg.addColorStop(0.5, rainbowColors[1]);
+          rg.addColorStop(1,   rainbowColors[2]);
+          ctx.fillStyle = rg;
+          ctx.fill();
+          // White sparkle stars
+          ctx.fillStyle = '#fff';
+          [[-12*s, -10*s, 3.5*s], [6*s, -6*s, 2.5*s], [-4*s, 10*s, 2*s], [8*s, 4*s, 3*s]].forEach(([dx, dy, r]) => {
+            for (let p = 0; p < 8; p++) {
+              const a = (p / 8) * Math.PI * 2;
+              const pr = p % 2 === 0 ? r : r * 0.4;
+              p === 0
+                ? ctx.beginPath() || ctx.moveTo(x + dx + Math.cos(a) * pr, y + dy + Math.sin(a) * pr)
+                : ctx.lineTo(x + dx + Math.cos(a) * pr, y + dy + Math.sin(a) * pr);
+            }
+            ctx.closePath(); ctx.fill();
+          });
+        }
       }
 
       ctx.restore();
