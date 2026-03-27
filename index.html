@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Llama Game</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -14,35 +15,161 @@
       min-height: 100dvh;
       overflow: hidden;
     }
-    canvas {
-      display: block;
-      position: absolute;
-    }
-    #playAgainBtn {
+    canvas { display: block; position: absolute; }
+
+    /* ===== LEADERBOARD OVERLAY ===== */
+    #gameOverlay {
       display: none;
-      position: absolute;
-      padding: 14px 36px;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(10, 5, 30, 0.93);
+      z-index: 20;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+    }
+    .overlay-panel {
+      width: min(420px, 92vw);
+      text-align: center;
+      padding: 20px 24px;
+    }
+    .overlay-score-big {
+      font-size: 80px;
+      font-weight: bold;
+      color: #FFD700;
+      text-shadow: 0 0 24px rgba(255,215,0,0.6), 0 2px 8px #000;
+      line-height: 1;
+    }
+    .overlay-score-label {
+      color: #a78bfa;
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .overlay-prompt {
+      color: #e2e8f0;
+      font-size: 16px;
+      margin-bottom: 14px;
+    }
+    #playerNameInput {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      border: 2px solid #ff2d78;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      text-align: center;
+      outline: none;
+      margin-bottom: 14px;
+      box-sizing: border-box;
+    }
+    #playerNameInput::placeholder { color: rgba(255,255,255,0.35); }
+    #playerNameInput:focus { border-color: #FFD700; }
+    .overlay-btns { display: flex; gap: 10px; justify-content: center; }
+    #submitScoreBtn {
+      padding: 12px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #ff2d78, #c2006e);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #submitScoreBtn:disabled { opacity: 0.6; cursor: default; }
+    #skipScoreBtn {
+      padding: 12px 20px;
+      font-size: 16px;
+      background: transparent;
+      color: #a78bfa;
+      border: 1px solid #a78bfa;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .leaderboard-title {
       font-size: 22px;
       font-weight: bold;
-      background: #b00802;
-      color: #ffffff;
+      color: #FFD700;
+      margin-bottom: 14px;
+    }
+    #leaderboardList {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 20px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    #leaderboardList li {
+      display: flex;
+      align-items: center;
+      padding: 9px 12px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      font-size: 16px;
+      color: #e2e8f0;
+    }
+    #leaderboardList li.top-3 { background: rgba(255,215,0,0.1); }
+    #leaderboardList li.current { background: rgba(255,45,120,0.2); border: 1px solid #ff2d78; }
+    #leaderboardList .rank { width: 32px; color: #a78bfa; font-weight: bold; flex-shrink: 0; }
+    #leaderboardList .lb-name { flex: 1; text-align: left; padding: 0 8px; }
+    #leaderboardList .lb-score { color: #FFD700; font-weight: bold; }
+    #playAgainBtn {
+      display: none;
+      padding: 14px 40px;
+      font-size: 20px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #ff2d78, #c2006e);
+      color: #fff;
       border: none;
       border-radius: 12px;
       cursor: pointer;
-      z-index: 10;
-      min-height: 52px;
     }
-    #playAgainBtn:hover { background: #8a0602; }
+    #playAgainBtn:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
   <canvas id="gameCanvas" width="480" height="640"></canvas>
-  <button id="playAgainBtn">Play Again</button>
+
+  <div id="gameOverlay">
+    <div id="nameEntryPanel" class="overlay-panel">
+      <div class="overlay-score-big" id="overlayScoreNum"></div>
+      <div class="overlay-score-label">points</div>
+      <p class="overlay-prompt">Add your score to the leaderboard</p>
+      <input id="playerNameInput" type="text" placeholder="Your name" maxlength="20" autocomplete="off">
+      <div class="overlay-btns">
+        <button id="submitScoreBtn">Submit ✓</button>
+        <button id="skipScoreBtn">Skip</button>
+      </div>
+    </div>
+    <div id="leaderboardPanel" class="overlay-panel" style="display:none">
+      <div class="leaderboard-title">🏆 Leaderboard</div>
+      <ol id="leaderboardList"></ol>
+      <button id="playAgainBtn">Play Again 🦙</button>
+    </div>
+  </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const playAgainBtn = document.getElementById('playAgainBtn');
+    const playAgainBtn      = document.getElementById('playAgainBtn');
+    const gameOverlay       = document.getElementById('gameOverlay');
+    const nameEntryPanel    = document.getElementById('nameEntryPanel');
+    const leaderboardPanel  = document.getElementById('leaderboardPanel');
+    const playerNameInput   = document.getElementById('playerNameInput');
+    const submitScoreBtn    = document.getElementById('submitScoreBtn');
+    const skipScoreBtn      = document.getElementById('skipScoreBtn');
+    const overlayScoreNum   = document.getElementById('overlayScoreNum');
+    const leaderboardList   = document.getElementById('leaderboardList');
+
+    // ===== SUPABASE =====
+    const SUPABASE_URL = 'https://eisfxuwnvgwzejpzpfup.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpc2Z4dXdudmd3emVqcHpwZnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjA1NjgsImV4cCI6MjA5MDE5NjU2OH0.LlEdBDlDDFh_0tzBLdl1guuZjOXov5Zrn_kdmNqZImQ';
+    const sb = (window.supabase) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+    let playCount = 0;
+    let lastSubmittedName = '';
 
 
     // ===== GAME CONFIG (scores, speeds, timer) =====
@@ -1234,17 +1361,25 @@
       llama.x = canvas.width / 2;
       gameState = 'playing';
       initAudio();
-      positionPlayAgainBtn();
+      incrementPlayCount();
     }
 
     function endGame() {
       gameState = 'ended';
-      showPlayAgainBtn();
+      overlayScoreNum.textContent = score;
+      playerNameInput.value = lastSubmittedName;
+      nameEntryPanel.style.display = 'block';
+      leaderboardPanel.style.display = 'none';
+      playAgainBtn.style.display = 'none';
+      submitScoreBtn.disabled = false;
+      submitScoreBtn.textContent = 'Submit ✓';
+      gameOverlay.style.display = 'flex';
+      setTimeout(() => playerNameInput.focus(), 100);
     }
 
     function resetGame() {
       gameState = 'not-started';
-      hidePlayAgainBtn();
+      gameOverlay.style.display = 'none';
     }
 
     // ===== UI (score display, timer, end screen, credits) =====
@@ -1328,6 +1463,16 @@
         '22px sans-serif',
         '#FFFDE0'
       );
+
+      // Play counter
+      if (playCount > 0) {
+        textShadow(
+          `Played ${playCount.toLocaleString()} time${playCount !== 1 ? 's' : ''}`,
+          canvas.width / 2, 200,
+          '16px sans-serif',
+          'rgba(255,253,224,0.65)'
+        );
+      }
 
       // Instruction
       const isTouchDevice = 'ontouchstart' in window;
@@ -1446,26 +1591,92 @@
       });
     }
 
-    // Play again button positioning
-    function positionPlayAgainBtn() {
-      const scale = parseFloat(canvas.style.transform?.match(/scale\(([^)]+)\)/)?.[1] || 1);
-      const rect = canvas.getBoundingClientRect();
-      playAgainBtn.style.left = `${rect.left + (canvas.width * scale) / 2 - playAgainBtn.offsetWidth / 2}px`;
-      playAgainBtn.style.top  = `${rect.top  + (canvas.height * scale * 0.88)}px`;
+    // No-ops kept for any demo-state code that references them
+    function positionPlayAgainBtn() {}
+    function showPlayAgainBtn() {}
+    function hidePlayAgainBtn() {}
+
+    playAgainBtn.addEventListener('click', () => { resetGame(); });
+
+    // ===== LEADERBOARD + PLAY COUNTER =====
+    async function fetchPlayCount() {
+      if (!sb) return;
+      try {
+        const { count } = await sb.from('plays').select('*', { count: 'exact', head: true });
+        playCount = count || 0;
+      } catch(e) {}
     }
 
-    function showPlayAgainBtn() {
-      playAgainBtn.style.display = 'block';
-      setTimeout(positionPlayAgainBtn, 50);
+    async function incrementPlayCount() {
+      playCount++;
+      if (!sb) return;
+      try { await sb.from('plays').insert({}); } catch(e) {}
     }
 
-    function hidePlayAgainBtn() {
-      playAgainBtn.style.display = 'none';
-    }
-
-    playAgainBtn.addEventListener('click', () => {
-      resetGame();
+    submitScoreBtn.addEventListener('click', async () => {
+      const name = playerNameInput.value.trim() || 'Anonymous';
+      lastSubmittedName = name;
+      submitScoreBtn.disabled = true;
+      submitScoreBtn.textContent = '...';
+      await submitAndShowLeaderboard(name, score);
     });
+
+    skipScoreBtn.addEventListener('click', async () => {
+      await submitAndShowLeaderboard(null, score);
+    });
+
+    playerNameInput.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') submitScoreBtn.click();
+    });
+
+    async function submitAndShowLeaderboard(name, finalScore) {
+      let submittedId = null;
+      if (name && sb) {
+        try {
+          const { data } = await sb.from('scores')
+            .insert({ name, score: finalScore })
+            .select('id').single();
+          if (data) submittedId = data.id;
+        } catch(e) {}
+      }
+      await showLeaderboard(submittedId);
+    }
+
+    async function showLeaderboard(highlightId) {
+      nameEntryPanel.style.display = 'none';
+      leaderboardPanel.style.display = 'block';
+      leaderboardList.innerHTML = '<li style="color:#a78bfa;text-align:center;padding:16px">Loading...</li>';
+
+      let rows = [];
+      if (sb) {
+        try {
+          const { data } = await sb.from('scores')
+            .select('id, name, score')
+            .order('score', { ascending: false })
+            .limit(10);
+          rows = data || [];
+        } catch(e) {}
+      }
+
+      if (rows.length === 0) {
+        leaderboardList.innerHTML = '<li style="color:#a78bfa;text-align:center;padding:16px">Be the first on the board!</li>';
+      } else {
+        leaderboardList.innerHTML = rows.map((r, i) => {
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+          const isCurrent = r.id === highlightId;
+          const cls = isCurrent ? 'current' : i < 3 ? 'top-3' : '';
+          return `<li class="${cls}"><span class="rank">${medal}</span><span class="lb-name">${escapeHtml(r.name)}</span><span class="lb-score">${r.score} pts</span></li>`;
+        }).join('');
+      }
+
+      setTimeout(() => { playAgainBtn.style.display = 'block'; }, 1200);
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    fetchPlayCount();
 
     // ===== MOBILE (touch zones, viewport scaling) =====
     function scaleCanvas() {
@@ -1483,7 +1694,7 @@
       e.preventDefault();
       initAudio();
       if (gameState === 'not-started') { startGame(); return; }
-      if (gameState === 'ended')       { resetGame(); return; }
+      if (gameState === 'ended') return; // overlay handles restart — no accidental tap
       const rect = canvas.getBoundingClientRect();
       const scale = rect.width / canvas.width;
       Array.from(e.touches).forEach(touch => {
