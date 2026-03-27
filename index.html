@@ -1639,22 +1639,25 @@
           if (data) submittedId = data.id;
         } catch(e) {}
       }
-      await showLeaderboard(submittedId);
+      await showLeaderboard(submittedId, finalScore);
     }
 
-    async function showLeaderboard(highlightId) {
+    async function showLeaderboard(highlightId, playerScore) {
       nameEntryPanel.style.display = 'none';
       leaderboardPanel.style.display = 'block';
       leaderboardList.innerHTML = '<li style="color:#a78bfa;text-align:center;padding:16px">Loading...</li>';
 
-      let rows = [];
+      let rows = [], playerRank = null;
       if (sb) {
         try {
-          const { data } = await sb.from('scores')
-            .select('id, name, score')
-            .order('score', { ascending: false })
-            .limit(10);
-          rows = data || [];
+          const [topRes, rankRes] = await Promise.all([
+            sb.from('scores').select('id, name, score').order('score', { ascending: false }).limit(20),
+            playerScore != null
+              ? sb.from('scores').select('*', { count: 'exact', head: true }).gt('score', playerScore)
+              : Promise.resolve({ count: null })
+          ]);
+          rows = topRes.data || [];
+          if (rankRes.count != null) playerRank = rankRes.count + 1;
         } catch(e) {}
       }
 
@@ -1669,12 +1672,24 @@
         }).join('');
       }
 
-      // Play count below leaderboard
+      // Personal rank (always shown, outside scroll)
+      const rankEl = leaderboardPanel.querySelector('.lb-your-rank') || document.createElement('p');
+      rankEl.className = 'lb-your-rank';
+      if (playerRank != null && playerScore != null) {
+        const suffix = playerRank === 1 ? 'st' : playerRank === 2 ? 'nd' : playerRank === 3 ? 'rd' : 'th';
+        rankEl.textContent = `You came ${playerRank}${suffix} with ${playerScore} pts`;
+        rankEl.style.cssText = 'color:#ff2d78;font-size:15px;font-weight:bold;margin:12px 0 4px;';
+      } else {
+        rankEl.textContent = '';
+      }
+      leaderboardList.after(rankEl);
+
+      // Play count
       const countEl = leaderboardPanel.querySelector('.lb-play-count') || document.createElement('p');
       countEl.className = 'lb-play-count';
       countEl.textContent = `Played ${playCount.toLocaleString()} time${playCount !== 1 ? 's' : ''} worldwide`;
       countEl.style.cssText = 'color:rgba(167,139,250,0.8);font-size:14px;margin-bottom:16px;';
-      leaderboardList.after(countEl);
+      rankEl.after(countEl);
 
       setTimeout(() => { playAgainBtn.style.display = 'inline-block'; }, 1200);
     }
