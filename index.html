@@ -1464,16 +1464,6 @@
         '#FFFDE0'
       );
 
-      // Play counter
-      if (playCount > 0) {
-        textShadow(
-          `Played ${playCount.toLocaleString()} time${playCount !== 1 ? 's' : ''}`,
-          canvas.width / 2, 200,
-          '16px sans-serif',
-          'rgba(255,253,224,0.65)'
-        );
-      }
-
       // Instruction
       const isTouchDevice = 'ontouchstart' in window;
       const hint = isTouchDevice ? 'Tap to start' : 'Press SPACE to start';
