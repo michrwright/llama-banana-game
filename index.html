@@ -1372,15 +1372,26 @@
 
     function endGame() {
       gameState = 'ended';
-      overlayScoreNum.textContent = CONFIG.scoreVisible ? score : '';
-      playerNameInput.value = lastSubmittedName;
-      nameEntryPanel.style.display = CONFIG.leaderboardEnabled ? 'block' : 'none';
-      leaderboardPanel.style.display = 'none';
-      playAgainBtn.style.display = CONFIG.leaderboardEnabled ? 'none' : 'block';
       submitScoreBtn.disabled = false;
       submitScoreBtn.textContent = 'Submit ✓';
-      gameOverlay.style.display = 'flex';
-      if (CONFIG.leaderboardEnabled) setTimeout(() => playerNameInput.focus(), 100);
+
+      if (CONFIG.leaderboardEnabled) {
+        overlayScoreNum.textContent = score;
+        playerNameInput.value = lastSubmittedName;
+        nameEntryPanel.style.display = 'block';
+        leaderboardPanel.style.display = 'none';
+        playAgainBtn.style.display = 'none';
+        gameOverlay.style.display = 'flex';
+        setTimeout(() => playerNameInput.focus(), 100);
+      } else {
+        // No leaderboard — show a simple game over with Play Again
+        nameEntryPanel.style.display = 'none';
+        leaderboardPanel.querySelector('.leaderboard-title').style.display = 'none';
+        leaderboardList.style.display = 'none';
+        leaderboardPanel.style.display = 'block';
+        playAgainBtn.style.display = 'block';
+        gameOverlay.style.display = 'flex';
+      }
     }
 
     function resetGame() {
@@ -1641,6 +1652,8 @@
 
     async function showLeaderboard(highlightId, playerScore) {
       nameEntryPanel.style.display = 'none';
+      leaderboardPanel.querySelector('.leaderboard-title').style.display = '';
+      leaderboardList.style.display = '';
       leaderboardPanel.style.display = 'block';
       leaderboardList.innerHTML = '<li style="color:#a78bfa;text-align:center;padding:16px">Loading...</li>';
 
