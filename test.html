@@ -183,18 +183,18 @@
       winMessage: 'Game over!',
       badName: 'Bad banana',
       credits: { class1: '', class2: '', class3: '' },
-      scoreVisible: false,
-      soundsEnabled: false,
-      leaderboardEnabled: false,
-      speedRampEnabled: false,
+      scoreVisible: true,
+      soundsEnabled: true,
+      leaderboardEnabled: true,
+      speedRampEnabled: true,
     };
 
     // ===== LLAMA APPEARANCE (pyjamas, colours, name) =====
     const llamaConfig = {
-      name: '',
+      name: CONFIG.llama.name,
       bodyColor: '#E8E8E8',
       outlineColor: '#333333',
-      hasPyjamas: false,
+      hasPyjamas: true,
       pyjamaColor: '#cc0000',
       pyjamaPattern: 'stars',
       pyjamaStripeColor: '#FFD700',
@@ -568,7 +568,11 @@
     const backgroundConfig = {
       skyColor: '#87CEEB',
       sandColor: '#F5DEB3',
-      elements: []
+      elements: [
+        { type: 'sun', x: 240, y: 90, size: 55 },
+        { type: 'palmTree', x: 55,  lean:  1 },
+        { type: 'palmTree', x: 425, lean: -1 },
+      ]
       // To add elements, push objects like:
       // { type: 'sun', x: 380, y: 80, color: '#FFD700', size: 40 }
       // { type: 'son', x: 240, y: 340 }
