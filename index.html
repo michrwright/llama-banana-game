@@ -182,7 +182,11 @@
       gameTitle: 'Llama Game',
       winMessage: 'Game over!',
       badName: 'Bad banana',
-      credits: { class1: '', class2: '', class3: '' }
+      credits: { class1: '', class2: '', class3: '' },
+      scoreVisible: true,
+      soundsEnabled: true,
+      leaderboardEnabled: true,
+      speedRampEnabled: true,
     };
 
     // ===== LLAMA APPEARANCE (pyjamas, colours, name) =====
@@ -1238,6 +1242,7 @@
     function playSound(type) {
       try {
         if (!audioCtx) return;
+        if (!CONFIG.soundsEnabled) return;
         const fn = soundLibrary[soundAssignment[type]];
         if (fn) fn();
       } catch(e) {}
@@ -1267,6 +1272,7 @@
     let scoreFlash = { color: '#fff', timer: 0 };
 
     function getCurrentSpeed() {
+      if (!CONFIG.speedRampEnabled) return CONFIG.speed.slow;
       if (timeRemaining > 40) return CONFIG.speed.slow;
       if (timeRemaining > 20) return CONFIG.speed.medium;
       return CONFIG.speed.fast;
@@ -1366,15 +1372,15 @@
 
     function endGame() {
       gameState = 'ended';
-      overlayScoreNum.textContent = score;
+      overlayScoreNum.textContent = CONFIG.scoreVisible ? score : '';
       playerNameInput.value = lastSubmittedName;
-      nameEntryPanel.style.display = 'block';
+      nameEntryPanel.style.display = CONFIG.leaderboardEnabled ? 'block' : 'none';
       leaderboardPanel.style.display = 'none';
-      playAgainBtn.style.display = 'none';
+      playAgainBtn.style.display = CONFIG.leaderboardEnabled ? 'none' : 'block';
       submitScoreBtn.disabled = false;
       submitScoreBtn.textContent = 'Submit ✓';
       gameOverlay.style.display = 'flex';
-      setTimeout(() => playerNameInput.focus(), 100);
+      if (CONFIG.leaderboardEnabled) setTimeout(() => playerNameInput.focus(), 100);
     }
 
     function resetGame() {
@@ -1416,6 +1422,7 @@
       );
 
       // Score
+      if (!CONFIG.scoreVisible) return;
       const scoreName  = llamaConfig.name ? `${llamaConfig.name}: ` : 'Score: ';
       const scoreColor = scoreFlash.timer > 0
         ? scoreFlash.color
@@ -1791,6 +1798,10 @@
       CONFIG.credits.class1     = '';
       CONFIG.credits.class2     = '';
       CONFIG.credits.class3     = '';
+      CONFIG.scoreVisible       = false;
+      CONFIG.soundsEnabled      = false;
+      CONFIG.leaderboardEnabled = false;
+      CONFIG.speedRampEnabled   = false;
 
       if (param === '0') return; // stop here — boring start
 
@@ -1811,17 +1822,21 @@
       }
 
       if (param >= '2') {
-        // Class 2: special and bad bananas active
+        // Class 2: special and bad bananas, sounds, scoring, speed ramp
         bananaConfig.specialActive = true;
         bananaConfig.badActive     = true;
+        CONFIG.scoreVisible        = true;
+        CONFIG.soundsEnabled       = true;
+        CONFIG.speedRampEnabled    = true;
         CONFIG.credits.class2      = 'Game mechanics: Class 2';
       }
 
       if (param >= '3') {
-        // Class 3: title, win message, all credits
-        CONFIG.gameTitle      = "Dolly's Banana Dash";
-        CONFIG.winMessage     = 'AMAZING! What a catch!';
-        CONFIG.credits.class3 = 'Name & finishing touches: Class 3';
+        // Class 3: title, win message, credits, leaderboard
+        CONFIG.gameTitle          = "Dolly's Banana Dash";
+        CONFIG.winMessage         = 'AMAZING! What a catch!';
+        CONFIG.credits.class3     = 'Name & finishing touches: Class 3';
+        CONFIG.leaderboardEnabled = true;
       }
     })();
 
