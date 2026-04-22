@@ -811,8 +811,8 @@
       regular: { color: '#FFE135', size: 24, label: 'banana' },
       special: { color: '#FF9EE0', glowColor: '#E8BBFF', size: 30, label: 'special banana' },
       bad:     { color: '#5C4033', size: 24, label: CONFIG.badName },
-      specialActive: true,
-      badActive: true,
+      specialActive: false,
+      badActive: false,
       specialStyle: 'rainbow', // 'rainbow' or 'golden' — set during Class 2 Beat 3
     };
 
@@ -1253,7 +1253,7 @@
     let spawnTimer = 0;
     const SPAWN_INTERVAL_MIN = 50, SPAWN_INTERVAL_MAX = 90;
     let nextSpawn = 70;
-    let bananasPerSpawn = 3;  // Class 2 can increase this
+    let bananasPerSpawn = 1;  // Class 2 can increase this
     const keys = { left: false, right: false };
 
     const llama = {
