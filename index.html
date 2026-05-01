@@ -256,19 +256,19 @@
     const CONFIG = {
       timer: 60,
       speed: { slow: 2, medium: 3.5, fast: 5.5 },
-      score: { special: 10, regular: 5, bad: -20 },
+      score: { special: 10, regular: 5, bad: -15 },
       banana: { rottenChance: 0.2 },
       llama: { name: 'J-Lam', speed: 5 },
       gameTitle: 'Llama Game',
       winMessage: 'Game over!',
       badName: 'Bad banana',
       credits: { class1: '', class2: '', class3: '' },
-      scoreVisible: false,
+      scoreVisible: true,
       soundsEnabled: false,
       counterVisible: false,    // step 1: play counter on start screen
       nameEntryEnabled: false,  // step 2: name entry + score submit after game
       leaderboardEnabled: false, // step 3: full leaderboard reveals after submit
-      speedRampEnabled: false,
+      speedRampEnabled: true,
     };
 
     // ===== LLAMA APPEARANCE (pyjamas, colours, name) =====
@@ -960,9 +960,9 @@
       regular: { color: '#FFE135', size: 24, label: 'banana' },
       special: { color: '#FF9EE0', glowColor: '#E8BBFF', size: 30, label: 'special banana' },
       bad:     { color: '#5C4033', size: 24, label: CONFIG.badName },
-      specialActive: false,
-      badActive: false,
-      specialStyle: 'rainbow', // 'rainbow' or 'golden' — set during Class 2 Beat 3
+      specialActive: true,
+      badActive: true,
+      specialStyle: 'rainbow',
     };
 
     function spawnBanana() {
@@ -1402,7 +1402,7 @@
     let spawnTimer = 0;
     const SPAWN_INTERVAL_MIN = 50, SPAWN_INTERVAL_MAX = 90;
     let nextSpawn = 70;
-    let bananasPerSpawn = 1;  // Class 2 can increase this
+    let bananasPerSpawn = 3;
     const keys = { left: false, right: false };
 
     const llama = {
@@ -2003,13 +2003,15 @@
       }
 
       if (param >= '2') {
-        // Class 2: special and bad bananas, sounds, scoring, speed ramp
-        bananaConfig.specialActive = true;
-        bananaConfig.badActive     = true;
-        CONFIG.scoreVisible        = true;
-        CONFIG.soundsEnabled       = true;
-        CONFIG.speedRampEnabled    = true;
-        CONFIG.credits.class2      = 'Game mechanics: Class 2';
+        // Class 2: scoring, bad bananas (-15), rainbow special (+10), 3 per spawn, speed ramp
+        bananaConfig.specialActive    = true;
+        bananaConfig.specialStyle     = 'rainbow';
+        bananaConfig.badActive        = true;
+        CONFIG.score.bad              = -15;
+        CONFIG.scoreVisible           = true;
+        CONFIG.speedRampEnabled       = true;
+        bananasPerSpawn               = 3;
+        CONFIG.credits.class2         = 'Game mechanics: Class 2';
       }
 
       if (param >= '3') {
