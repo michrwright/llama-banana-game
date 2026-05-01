@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Class 2 — Run of Show</title>
+  <style>
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: sans-serif;
+      max-width: 680px;
+      margin: 40px auto;
+      padding: 0 24px;
+      line-height: 1.6;
+    }
+    h1 { color: #a78bfa; font-size: 28px; margin-bottom: 4px; }
+    h2 { color: #FFD700; font-size: 18px; margin: 32px 0 8px; border-bottom: 1px solid #333; padding-bottom: 6px; }
+    .tab { background: #0f0f1a; border: 1px solid #333; border-radius: 6px; padding: 10px 14px; margin: 8px 0; font-size: 14px; }
+    .tab span { color: #a78bfa; font-weight: bold; }
+    .beat { background: #0f0f1a; border-left: 3px solid #a78bfa; border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 10px 0; }
+    .beat .num { color: #FFD700; font-weight: bold; font-size: 18px; }
+    .beat .title { color: #fff; font-weight: bold; font-size: 16px; margin-bottom: 4px; }
+    .beat .code { color: #44FF88; font-family: monospace; font-size: 13px; margin-top: 6px; }
+    .beat .note { color: #888; font-size: 13px; margin-top: 4px; }
+    .scores { display: flex; gap: 12px; margin: 8px 0; }
+    .score-pill { background: #0f0f1a; border: 1px solid #333; border-radius: 20px; padding: 6px 16px; font-size: 14px; }
+    .score-pill.good { border-color: #44FF88; color: #44FF88; }
+    .score-pill.bad { border-color: #FF4444; color: #FF4444; }
+    .workflow { background: #0f0f1a; border: 1px solid #a78bfa; border-radius: 6px; padding: 14px 18px; margin-top: 8px; }
+    .workflow p { margin: 4px 0; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <h1>Class 2 — Run of Show</h1>
+  <p style="color:#888">Game mechanics session</p>
+
+  <h2>Open before class</h2>
+  <div class="tab"><span>Tab 1 —</span> file:///Users/michellewright/Documents/GitHub/llama-banana-game/index.html?demo=1<br>
+  <span style="color:#888;font-size:13px">The BEFORE — what Class 1 built</span></div>
+  <div class="tab"><span>Tab 2 —</span> file:///Users/michellewright/Documents/GitHub/llama-banana-game/index.html?demo=2<br>
+  <span style="color:#888;font-size:13px">The GOAL — what Class 2 will have built by the end</span></div>
+  <div class="tab"><span>Tab 3 —</span> file:///Users/michellewright/Documents/GitHub/llama-banana-game/index.html<br>
+  <span style="color:#888;font-size:13px">The LIVE BUILD — this is where you make changes</span></div>
+
+  <h2>Scores (fixed — class can see but not change)</h2>
+  <div class="scores">
+    <div class="score-pill good">Regular banana +5</div>
+    <div class="score-pill good">Rainbow banana +10</div>
+    <div class="score-pill bad">Bad banana −20</div>
+  </div>
+
+  <h2>Teaching order</h2>
+
+  <div class="beat">
+    <div class="num">Beat 1</div>
+    <div class="title">Turn on the score display</div>
+    <div class="note">Do this first — so when the class catches a banana they see the points appear straight away.</div>
+    <div class="code">CONFIG.scoreVisible = true</div>
+  </div>
+
+  <div class="beat">
+    <div class="num">Beat 2</div>
+    <div class="title">Rainbow banana</div>
+    <div class="note">Introduce it, let them catch one, they see +10. Then vote: rainbow or golden?</div>
+    <div class="code">bananaConfig.specialActive = true<br>
+    bananaConfig.specialStyle = 'rainbow' <span style="color:#888">// or 'golden'</span></div>
+  </div>
+
+  <div class="beat">
+    <div class="num">Beat 3</div>
+    <div class="title">Bad banana</div>
+    <div class="note">Introduce it, let them catch one, they see −20. The penalty makes the game strategic.</div>
+    <div class="code">bananaConfig.badActive = true</div>
+  </div>
+
+  <div class="beat">
+    <div class="num">Beat 4</div>
+    <div class="title">Speed ramp</div>
+    <div class="note">Game gets progressively faster as time goes on. Turn it on and let them feel the difference.</div>
+    <div class="code">CONFIG.speedRampEnabled = true</div>
+  </div>
+
+  <div class="beat">
+    <div class="num">Beat 5</div>
+    <div class="title">Sounds</div>
+    <div class="note">Press keys 1–6 to preview each sound. Class votes which sound goes on which banana type.</div>
+    <div class="code">CONFIG.soundsEnabled = true</div>
+  </div>
+
+  <h2>Workflow</h2>
+  <div class="workflow">
+    <p>Tell Claude what to change in plain English</p>
+    <p>Claude edits index.html → refresh Tab 3 to see it</p>
+    <p>Push to GitHub <strong>once</strong> at the end of the session</p>
+  </div>
+
+</body>
+</html>

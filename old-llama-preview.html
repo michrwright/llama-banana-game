@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Old Llama — v1</title>
+  <style>
+    body {
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: sans-serif;
+      color: white;
+      margin: 0;
+    }
+    h2 { margin-bottom: 12px; color: #a78bfa; font-size: 24px; }
+    p { color: #888; font-size: 14px; margin-top: 12px; }
+    canvas { border: 2px solid #333; border-radius: 8px; background: #87CEEB; }
+  </style>
+</head>
+<body>
+  <h2>The original llama (v1)</h2>
+  <canvas id="c" width="200" height="200"></canvas>
+  <p>This is what the llama looked like before Joshua improved it.</p>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    const llamaConfig = {
+      bodyColor: '#E8E8E8',
+      outlineColor: '#333333',
+      hasPyjamas: false,
+    };
+
+    function drawLlama(cx, cy) {
+      const w = 60, h = 80;
+      const x = cx - w / 2, y = cy - h;
+
+      ctx.save();
+
+      ctx.fillStyle = llamaConfig.bodyColor;
+      ctx.strokeStyle = llamaConfig.outlineColor;
+      ctx.lineWidth = 2;
+
+      // Body
+      ctx.beginPath();
+      ctx.roundRect(x + 10, y + 30, 40, 35, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      // Neck
+      ctx.fillStyle = llamaConfig.bodyColor;
+      ctx.beginPath();
+      ctx.roundRect(x + 22, y + 12, 16, 22, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      // Head
+      ctx.beginPath();
+      ctx.ellipse(x + 30, y + 10, 12, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Ears
+      ctx.beginPath();
+      ctx.moveTo(x + 21, y + 2);
+      ctx.lineTo(x + 18, y - 8);
+      ctx.lineTo(x + 25, y + 1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + 35, y + 1);
+      ctx.lineTo(x + 38, y - 8);
+      ctx.lineTo(x + 41, y + 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Eye
+      ctx.fillStyle = '#333';
+      ctx.beginPath();
+      ctx.arc(x + 35, y + 8, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Nose
+      ctx.fillStyle = '#888';
+      ctx.beginPath();
+      ctx.ellipse(x + 38, y + 13, 3, 2, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Legs
+      ctx.fillStyle = llamaConfig.bodyColor;
+      ctx.strokeStyle = llamaConfig.outlineColor;
+      [x + 13, x + 22, x + 33, x + 42].forEach(lx => {
+        ctx.beginPath();
+        ctx.roundRect(lx, y + 60, 8, 20, 3);
+        ctx.fill();
+        ctx.stroke();
+      });
+
+      ctx.restore();
+    }
+
+    // Draw on a sky-blue background
+    ctx.fillStyle = '#87CEEB';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Sand at the bottom
+    ctx.fillStyle = '#F5DEB3';
+    ctx.fillRect(0, 150, 200, 50);
+
+    // Draw the llama centred
+    drawLlama(100, 145);
+  </script>
+</body>
+</html>

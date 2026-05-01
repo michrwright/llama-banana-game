@@ -1,3 +1,83 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  CLASS 1 — TEACHER CHEAT SHEET                               ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║  OPEN THESE TABS BEFORE CLASS                                ║
+  ║                                                              ║
+  ║  1. file:///Users/michellewright/Documents/GitHub/           ║
+  ║     llama-banana-game/old-llama-preview.html                 ║
+  ║     The BEFORE — "before Joshua improved it"                 ║
+  ║                                                              ║
+  ║  2. file:///Users/michellewright/Documents/GitHub/           ║
+  ║     llama-banana-game/index.html?demo=0                      ║
+  ║     Boring start — what the class begins with today          ║
+  ║                                                              ║
+  ║  3. file:///Users/michellewright/Documents/GitHub/           ║
+  ║     llama-banana-game/index.html?demo=1                      ║
+  ║     The GOAL — what Class 1 will have built by the end       ║
+  ║                                                              ║
+  ║  4. file:///Users/michellewright/Documents/GitHub/           ║
+  ║     llama-banana-game/index.html                             ║
+  ║     THE LIVE BUILD — tell Claude what to change,             ║
+  ║     save, refresh this tab to see it                         ║
+  ║                                                              ║
+  ║  WORKFLOW                                                     ║
+  ║    Tell Claude what to change in plain English               ║
+  ║    Claude edits this file → you refresh tab 4                ║
+  ║    Push to GitHub ONCE at the end of the session             ║
+  ║                                                              ║
+  ║  WHAT CLASS 1 CHANGES                                        ║
+  ║    llamaConfig.hasPyjamas    → true                          ║
+  ║    llamaConfig.pyjamaColor   → pick a colour                 ║
+  ║    llamaConfig.pyjamaPattern → 'stripes' | 'dots' | 'crosses'║
+  ║    llamaConfig.name          → whatever the class decides    ║
+  ║    backgroundConfig.elements → add sun, palmTree, waves      ║
+  ║                                                              ║
+  ║  WHY ?demo=0 stays unchanged: permanent snapshot of the      ║
+  ║  boring start so future classes can see the before.          ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║  CLASS 2 — TEACHER CHEAT SHEET                               ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║  OPEN THESE TABS BEFORE CLASS                                ║
+  ║                                                              ║
+  ║  1. file:///Users/michellewright/Documents/GitHub/           ║
+  ║     llama-banana-game/index.html?demo=1                      ║
+  ║     The BEFORE — what Class 1 built                          ║
+  ║                                                              ║
+  ║  2. file:///Users/michellewright/Documents/GitHub/           ║
+  ║     llama-banana-game/index.html?demo=2                      ║
+  ║     The GOAL — what Class 2 will have built by the end       ║
+  ║                                                              ║
+  ║  3. file:///Users/michellewright/Documents/GitHub/           ║
+  ║     llama-banana-game/index.html                             ║
+  ║     THE LIVE BUILD — tell Claude what to change,             ║
+  ║     save, refresh this tab to see it                         ║
+  ║                                                              ║
+  ║  TEACHING ORDER (beats)                                      ║
+  ║    1. Turn on score display first — so +/- is visible        ║
+  ║       CONFIG.scoreVisible = true                             ║
+  ║    2. Rainbow banana — class catches it, sees +10            ║
+  ║       bananaConfig.specialActive = true                      ║
+  ║       bananaConfig.specialStyle = 'rainbow' or 'golden'      ║
+  ║    3. Bad banana — class catches it, sees -20                ║
+  ║       bananaConfig.badActive = true                          ║
+  ║    4. Speed ramp — game gets faster over time                ║
+  ║       CONFIG.speedRampEnabled = true                         ║
+  ║    5. Sounds — press keys 1-6 to preview, class votes        ║
+  ║       which sound goes on which banana type                  ║
+  ║       CONFIG.soundsEnabled = true                            ║
+  ║                                                              ║
+  ║  SCORES (baked in, class cannot change these)                ║
+  ║    Regular banana  → +5                                      ║
+  ║    Rainbow banana  → +10                                     ║
+  ║    Bad banana      → -20                                     ║
+  ║                                                              ║
+  ║  WORKFLOW                                                     ║
+  ║    Tell Claude what to change in plain English               ║
+  ║    Claude edits this file → you refresh tab 3                ║
+  ║    Push to GitHub ONCE at the end of the session             ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -185,7 +265,9 @@
       credits: { class1: '', class2: '', class3: '' },
       scoreVisible: false,
       soundsEnabled: false,
-      leaderboardEnabled: false,
+      counterVisible: false,    // step 1: play counter on start screen
+      nameEntryEnabled: false,  // step 2: name entry + score submit after game
+      leaderboardEnabled: false, // step 3: full leaderboard reveals after submit
       speedRampEnabled: false,
     };
 
@@ -1371,7 +1453,7 @@
       submitScoreBtn.disabled = false;
       submitScoreBtn.textContent = 'Submit ✓';
 
-      if (CONFIG.leaderboardEnabled) {
+      if (CONFIG.nameEntryEnabled || CONFIG.leaderboardEnabled) {
         overlayScoreNum.textContent = score;
         playerNameInput.value = lastSubmittedName;
         nameEntryPanel.style.display = 'block';
@@ -1477,6 +1559,16 @@
         '22px sans-serif',
         '#FFFDE0'
       );
+
+      // Play counter
+      if (CONFIG.counterVisible) {
+        textShadow(
+          `Played ${playCount.toLocaleString()} time${playCount !== 1 ? 's' : ''} worldwide`,
+          canvas.width / 2, 195,
+          '18px sans-serif',
+          '#a78bfa'
+        );
+      }
 
       // Instruction
       const isTouchDevice = 'ontouchstart' in window;
@@ -1643,7 +1735,17 @@
           if (data) submittedId = data.id;
         } catch(e) {}
       }
-      await showLeaderboard(submittedId, finalScore);
+      if (CONFIG.leaderboardEnabled) {
+        await showLeaderboard(submittedId, finalScore);
+      } else {
+        // Score saved but leaderboard not revealed yet — just show Play Again
+        nameEntryPanel.style.display = 'none';
+        leaderboardPanel.querySelector('.leaderboard-title').style.display = 'none';
+        leaderboardList.style.display = 'none';
+        leaderboardPanel.style.display = 'block';
+        playAgainBtn.style.display = 'block';
+        gameOverlay.style.display = 'flex';
+      }
     }
 
     async function showLeaderboard(highlightId, playerScore) {
@@ -1809,6 +1911,8 @@
       CONFIG.credits.class3     = '';
       CONFIG.scoreVisible       = false;
       CONFIG.soundsEnabled      = false;
+      CONFIG.counterVisible     = false;
+      CONFIG.nameEntryEnabled   = false;
       CONFIG.leaderboardEnabled = false;
       CONFIG.speedRampEnabled   = false;
 
@@ -1841,10 +1945,12 @@
       }
 
       if (param >= '3') {
-        // Class 3: title, win message, credits, leaderboard
+        // Class 3: title, win message, credits, full leaderboard
         CONFIG.gameTitle          = "Dolly's Banana Dash";
         CONFIG.winMessage         = 'AMAZING! What a catch!';
         CONFIG.credits.class3     = 'Name & finishing touches: Class 3';
+        CONFIG.counterVisible     = true;
+        CONFIG.nameEntryEnabled   = true;
         CONFIG.leaderboardEnabled = true;
       }
     })();
