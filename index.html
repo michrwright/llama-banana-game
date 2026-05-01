@@ -259,15 +259,15 @@
       score: { special: 10, regular: 5, bad: -15 },
       banana: { rottenChance: 0.2 },
       llama: { name: 'J-Lam', speed: 5 },
-      gameTitle: 'Llama Game',
+      gameTitle: 'Llama Drama in the Bahamas',
       winMessage: 'Game over!',
       badName: 'Bad banana',
       credits: { class1: '', class2: '', class3: '' },
       scoreVisible: true,
-      soundsEnabled: false,
-      counterVisible: false,    // step 1: play counter on start screen
-      nameEntryEnabled: false,  // step 2: name entry + score submit after game
-      leaderboardEnabled: false, // step 3: full leaderboard reveals after submit
+      soundsEnabled: true,
+      counterVisible: true,    // step 1: play counter on start screen
+      nameEntryEnabled: true,  // step 2: name entry + score submit after game
+      leaderboardEnabled: true, // step 3: full leaderboard reveals after submit
       speedRampEnabled: true,
     };
 
@@ -1371,7 +1371,7 @@
     const soundAssignment = {
       regular: 'boing',
       special: 'levelUp',
-      bad:     'fart',
+      bad:     'sadTrombone',
     };
 
     const soundLibrary = {
@@ -1610,14 +1610,15 @@
     function drawStartScreen() {
       drawLlama(llama.x, llama.y);
 
-      // Title
+      // Title — split into two lines if it contains ' in '
       ctx.textAlign = 'center';
-      textShadow(
-        CONFIG.gameTitle,
-        canvas.width / 2, 120,
-        'bold 44px sans-serif',
-        '#FFFFFF', '#000', 6
-      );
+      const titleParts = CONFIG.gameTitle.split(' in ');
+      if (titleParts.length === 2) {
+        textShadow(titleParts[0], canvas.width / 2, 100, 'bold 40px sans-serif', '#FFFFFF', '#000', 6);
+        textShadow('in ' + titleParts[1], canvas.width / 2, 145, 'bold 40px sans-serif', '#FFFFFF', '#000', 6);
+      } else {
+        textShadow(CONFIG.gameTitle, canvas.width / 2, 120, 'bold 44px sans-serif', '#FFFFFF', '#000', 6);
+      }
 
       // Subtitle
       textShadow(
