@@ -207,10 +207,25 @@
       cursor: pointer;
     }
     #playAgainBtn:hover { opacity: 0.9; }
+    #site-link {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.3);
+      font-family: sans-serif;
+      font-size: 13px;
+      text-decoration: none;
+      letter-spacing: 0.03em;
+      z-index: 5;
+      white-space: nowrap;
+    }
+    #site-link:hover { color: rgba(255,255,255,0.6); }
   </style>
 </head>
 <body>
   <canvas id="gameCanvas" width="480" height="640"></canvas>
+  <a id="site-link" href="https://michellewright.me" target="_blank">michellewright.me</a>
 
   <div id="gameOverlay">
     <div id="nameEntryPanel" class="overlay-panel">
