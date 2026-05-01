@@ -1623,7 +1623,7 @@
       // Subtitle
       textShadow(
         "Joshua's idea 🦙",
-        canvas.width / 2, 160,
+        canvas.width / 2, 175,
         '22px sans-serif',
         '#FFFDE0'
       );
@@ -1632,9 +1632,9 @@
       if (CONFIG.counterVisible) {
         textShadow(
           `Played ${playCount.toLocaleString()} time${playCount !== 1 ? 's' : ''} worldwide`,
-          canvas.width / 2, 195,
+          canvas.width / 2, 210,
           '18px sans-serif',
-          '#a78bfa'
+          '#FFD700'
         );
       }
 
@@ -1766,7 +1766,7 @@
     async function fetchPlayCount() {
       if (!sb) return;
       try {
-        const { count } = await sb.from('plays').select('*', { count: 'exact', head: true });
+        const { count } = await sb.from('scores').select('*', { count: 'exact', head: true });
         playCount = count || 0;
       } catch(e) {}
     }
