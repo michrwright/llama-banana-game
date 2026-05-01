@@ -276,14 +276,41 @@
       name: '',
       bodyColor: '#E8E8E8',
       outlineColor: '#333333',
-      hasPyjamas: false,
-      pyjamaColor: '#cc0000',
-      pyjamaPattern: 'stars',
-      pyjamaStripeColor: '#FFD700',
+      hasPyjamas: true,
+      pyjamaColor: '#1a6ed8',
+      pyjamaPattern: 'dots',
+      pyjamaStripeColor: '#22cc44',
+      hasSurfboard: true,
     };
 
     function drawLlama(cx, cy) {
       ctx.save();
+
+      // ── SURFBOARD ──
+      if (llamaConfig.hasSurfboard) {
+        const sbW = 220, sbH = 28;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 2, sbW / 2, sbH / 2, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#2ecc40';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 2, sbW / 2, sbH / 2, 0, Math.PI, 0);
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx + sbW / 2 - 14, cy + sbH / 2 + 1);
+        ctx.lineTo(cx + sbW / 2 - 6,  cy + sbH / 2 + 12);
+        ctx.lineTo(cx + sbW / 2 - 22, cy + sbH / 2 + 1);
+        ctx.fillStyle = '#27ae60';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 2, sbW / 2, sbH / 2, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = '#1a7a2a';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
       const F = llamaConfig.bodyColor;
       const O = llamaConfig.outlineColor;
 
@@ -650,7 +677,12 @@
     const backgroundConfig = {
       skyColor: '#87CEEB',
       sandColor: '#F5DEB3',
-      elements: []
+      elements: [
+        { type: 'sun', x: 400, y: 70, color: '#FFD700', size: 50 },
+        { type: 'palmTree', x: 55,  lean:  1 },
+        { type: 'palmTree', x: 415, lean: -1 },
+        { type: 'waves', color: '#4a9fd4' },
+      ]
       // To add elements, push objects like:
       // { type: 'sun', x: 380, y: 80, color: '#FFD700', size: 40 }
       // { type: 'son', x: 240, y: 340 }
@@ -863,16 +895,51 @@
 
     function drawWaves(el) {
       const { color = '#5BA4CF' } = el;
-      const y = canvas.height * 0.6 + 6;
+      const baseY = canvas.height * 0.6 + 6;
       ctx.save();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      for (let wx = 0; wx < canvas.width; wx += 40) {
-        ctx.moveTo(wx, y);
-        ctx.bezierCurveTo(wx + 10, y - 8, wx + 30, y - 8, wx + 40, y);
-      }
-      ctx.stroke();
+
+      // Draw two rows of waves at slightly different heights
+      [0, 18].forEach((offset, row) => {
+        const y = baseY + offset;
+        const waveW = 44;
+        const waveH = row === 0 ? 10 : 7;
+
+        // Filled wave body
+        ctx.beginPath();
+        ctx.moveTo(0, y + waveH);
+        for (let wx = 0; wx < canvas.width; wx += waveW) {
+          ctx.bezierCurveTo(wx + waveW * 0.25, y, wx + waveW * 0.75, y, wx + waveW, y + waveH);
+        }
+        ctx.lineTo(canvas.width, canvas.height);
+        ctx.lineTo(0, canvas.height);
+        ctx.closePath();
+        ctx.fillStyle = row === 0 ? 'rgba(70,140,200,0.55)' : 'rgba(60,120,180,0.4)';
+        ctx.fill();
+
+        // White crest along the top of each wave
+        ctx.beginPath();
+        for (let wx = 0; wx < canvas.width; wx += waveW) {
+          ctx.moveTo(wx, y + waveH);
+          ctx.bezierCurveTo(wx + waveW * 0.25, y, wx + waveW * 0.75, y, wx + waveW, y + waveH);
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Froth dots scattered just below the crest
+        for (let wx = 4; wx < canvas.width; wx += waveW) {
+          [0.15, 0.35, 0.55, 0.75, 0.9].forEach(t => {
+            const fx = wx + t * waveW;
+            const fy = y + waveH * 0.4 + Math.sin(t * Math.PI) * waveH * 0.5;
+            const r = 1.5 + Math.random() * 2;
+            ctx.beginPath();
+            ctx.arc(fx, fy, r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.fill();
+          });
+        }
+      });
+
       ctx.restore();
     }
 
@@ -1898,6 +1965,7 @@
 
       // Reset to boring baseline
       llamaConfig.hasPyjamas    = false;
+      llamaConfig.hasSurfboard  = false;
       llamaConfig.name          = '';
       backgroundConfig.elements = [];
       backgroundConfig.skyColor = '#87CEEB';
@@ -1919,17 +1987,17 @@
       if (param === '0') return; // stop here — boring start
 
       if (param >= '1') {
-        // Class 1: pyjamas, name, sun, palm tree, waves
+        // Class 1: blue dot pyjamas, surfboard, sun, palm trees, waves
         llamaConfig.hasPyjamas        = true;
-        llamaConfig.pyjamaColor       = '#ff69b4';
-        llamaConfig.pyjamaPattern     = 'stripes';
-        llamaConfig.pyjamaStripeColor = '#ffffff';
-        llamaConfig.name              = 'Dolly';
+        llamaConfig.pyjamaColor       = '#1a6ed8';
+        llamaConfig.pyjamaPattern     = 'dots';
+        llamaConfig.pyjamaStripeColor = '#22cc44';
+        llamaConfig.hasSurfboard      = true;
         backgroundConfig.elements     = [
-          { type: 'sun',      x: 380, y: 80,  color: '#FFD700', size: 40 },
-          { type: 'palmTree', x: 60,  lean:  1 },
-          { type: 'palmTree', x: 420, lean: -1 },
-          { type: 'waves',    color: '#5BA4CF' },
+          { type: 'sun',      x: 400, y: 70,  color: '#FFD700', size: 50 },
+          { type: 'palmTree', x: 55,  lean:  1 },
+          { type: 'palmTree', x: 415, lean: -1 },
+          { type: 'waves',    color: '#4a9fd4' },
         ];
         CONFIG.credits.class1 = 'Look & feel: Class 1';
       }
